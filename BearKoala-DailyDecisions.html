@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bear & Koala — Daily Decisions</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500;600;700&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fafaf8;--white:#fff;--ink:#111;
+  --border:#e8e5de;--border2:#d4d0c8;
+  --muted:#9a9690;--muted2:#7a7670;
+  --green:#16803c;--green-l:#dcfce7;--green-m:rgba(22,128,60,.12);
+  --amber:#b45309;--amber-l:#fef3c7;--amber-m:rgba(180,83,9,.1);
+  --red:#b91c1c;--red-l:#fee2e2;--red-m:rgba(185,28,28,.08);
+  --blue:#1d4ed8;--blue-l:#dbeafe;--blue-m:rgba(29,78,216,.08);
+  --purple:#6d28d9;--purple-l:#ede9fe;--purple-m:rgba(109,40,217,.08);
+  --mono:'Geist Mono',monospace;
+  --sans:'Geist',sans-serif;
+}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;min-height:100vh}
+
+/* ── NAV ── */
+nav{background:var(--white);border-bottom:1px solid var(--border);height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:100}
+.brand{font:700 14px var(--mono);letter-spacing:-.3px;display:flex;align-items:center;gap:8px}
+.brand-tag{background:var(--ink);color:#fff;padding:2px 7px;border-radius:3px;font-size:11px}
+.ntabs{display:flex;gap:1px;background:var(--border);border-radius:6px;padding:2px}
+.ntab{padding:4px 12px;border-radius:4px;border:none;background:transparent;font:500 12px var(--sans);color:var(--muted2);cursor:pointer;white-space:nowrap;transition:all .12s}
+.ntab:hover{color:var(--ink)}
+.ntab.on{background:var(--white);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.nav-r{display:flex;gap:6px;align-items:center}
+#statusPill{font:500 11px var(--mono);padding:3px 9px;border-radius:20px;border:1px solid var(--border2);color:var(--muted2)}
+#statusPill.live{border-color:rgba(22,128,60,.4);color:var(--green);background:var(--green-l)}
+#resetBtn{display:none;padding:4px 10px;border-radius:4px;border:1px solid var(--border);background:transparent;font:600 11px var(--sans);color:var(--muted2);cursor:pointer}
+#resetBtn:hover{border-color:var(--red);color:var(--red)}
+
+/* ── VIEWS ── */
+.view{display:none;animation:fadeUp .25s ease}.view.on{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+main{max-width:1160px;margin:0 auto;padding:22px 20px}
+
+/* ── UPLOAD ── */
+#uploadScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 50px);gap:24px}
+.up-title{font:700 24px var(--sans);letter-spacing:-.5px;text-align:center}
+.up-sub{color:var(--muted2);font:400 14px var(--mono);text-align:center;margin-top:4px}
+.up-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:680px;width:100%}
+.up-card{background:var(--white);border:1.5px dashed var(--border2);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:border-color .15s}
+.up-card:hover,.up-card.drag{border-color:var(--ink)}
+.up-ico{font-size:24px;margin-bottom:8px}
+.up-name{font:600 13px var(--sans);margin-bottom:2px}
+.up-hint{color:var(--muted2);font:400 11px var(--mono);margin-bottom:12px;line-height:1.5}
+.up-btn{padding:5px 14px;background:var(--ink);color:#fff;border:none;border-radius:4px;font:600 12px var(--sans);cursor:pointer}
+.up-btn:hover{opacity:.8}
+input[type=file]{display:none}
+.skip{color:var(--muted2);font:400 13px var(--mono);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.skip:hover{color:var(--ink)}
+
+/* ── PAGE HDR ── */
+.phdr{margin-bottom:18px}
+.ptitle{font:700 17px var(--sans);letter-spacing:-.3px}
+.psub{font:400 12px var(--mono);color:var(--muted2);margin-top:2px}
+.phdr-row{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.add-more-btn{padding:5px 12px;background:var(--white);border:1px solid var(--border2);border-radius:5px;font:600 12px var(--sans);cursor:pointer;white-space:nowrap}
+.add-more-btn:hover{border-color:var(--ink)}
+
+/* ── TODAY BANNER ── */
+.today-banner{background:var(--ink);color:#fff;border-radius:10px;padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.tb-left h2{font:700 16px var(--sans);letter-spacing:-.3px;margin-bottom:3px}
+.tb-left p{font:400 12px var(--mono);opacity:.6}
+.tb-right{display:flex;gap:16px;flex-wrap:wrap}
+.tb-stat{text-align:right}
+.tb-val{font:700 18px var(--mono);letter-spacing:-.5px}
+.tb-lbl{font:400 10px var(--mono);opacity:.5;text-transform:uppercase;letter-spacing:.5px;margin-top:1px}
+
+/* ── GRIDS ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+.gcol{display:flex;flex-direction:column;gap:14px}
+
+/* ── CARDS ── */
+.card{background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-bottom:1px solid var(--border)}
+.card-title{font:600 13px var(--sans)}
+.cbadge{font:400 10px var(--mono);color:var(--muted);background:var(--bg);border:1px solid var(--border);padding:2px 7px;border-radius:3px}
+
+/* ── RECOMMENDATION ROWS ── */
+.rec{display:flex;align-items:flex-start;gap:12px;padding:12px 15px;border-bottom:1px solid var(--border)}
+.rec:last-child{border-bottom:none}
+.rec-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.dot-g{background:var(--green)}.dot-a{background:var(--amber)}.dot-r{background:var(--red)}.dot-b{background:var(--blue)}.dot-p{background:var(--purple)}
+.rec-body{flex:1}
+.rec-label{font:600 13px var(--sans)}
+.rec-sub{font:400 12px var(--mono);color:var(--muted2);margin-top:2px;line-height:1.5}
+.rec-amount{font:700 14px var(--mono);white-space:nowrap;margin-top:2px}
+
+/* ── SPEND BREAKDOWN ── */
+.sb-row{display:flex;align-items:center;gap:10px;padding:9px 15px;border-bottom:1px solid var(--border)}
+.sb-row:last-child{border-bottom:none}
+.sb-cat{flex:1}
+.sb-name{font:600 12px var(--sans)}
+.sb-sub{font:400 10px var(--mono);color:var(--muted2)}
+.sb-bar-wrap{flex:1;max-width:120px}
+.sb-bar-bg{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.sb-bar-fill{height:100%;border-radius:2px;transition:width .5s ease}
+.sb-amt{font:600 12px var(--mono);min-width:70px;text-align:right}
+.sb-pct{font:400 10px var(--mono);color:var(--muted2);min-width:36px;text-align:right}
+
+/* ── PLATFORM CARDS ── */
+.platform-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 15px}
+.plat{border-radius:7px;padding:12px 14px;border:1px solid var(--border)}
+.plat-name{font:700 13px var(--sans);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.plat-ico{font-size:14px}
+.plat-stat{font:700 18px var(--mono);letter-spacing:-.5px}
+.plat-sub{font:400 11px var(--mono);color:var(--muted2);margin-top:2px}
+.plat-trend{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:3px;font:600 10px var(--mono);margin-top:6px}
+.up{background:var(--green-l);color:var(--green)}.dn{background:var(--red-l);color:var(--red)}.flat{background:var(--border);color:var(--muted2)}
+
+/* ── STAFF TABLE ── */
+.staff-row{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;padding:9px 15px;border-bottom:1px solid var(--border)}
+.staff-row:last-child{border-bottom:none}
+.staff-name{font:600 13px var(--sans)}
+.staff-sub{font:400 11px var(--mono);color:var(--muted2)}
+.staff-hrs{font:700 14px var(--mono)}
+.staff-cost{font:400 12px var(--mono);color:var(--muted2)}
+
+/* ── COST BREAKDOWN ── */
+.cost-section{padding:12px 15px;border-bottom:1px solid var(--border)}
+.cost-section:last-child{border-bottom:none}
+.cost-section-title{font:600 11px var(--mono);color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.cost-item{display:flex;justify-content:space-between;padding:4px 0;font-size:13px;border-bottom:1px solid rgba(0,0,0,.04)}
+.cost-item:last-child{border-bottom:none}
+.cost-key{color:var(--muted2);font-family:var(--mono)}
+.cost-val{font:600 13px var(--mono)}
+
+/* ── NEW PRODUCT SCORE ── */
+.np-score{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 15px}
+.nps-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px}
+.nps-val{font:700 20px var(--mono);letter-spacing:-.5px}
+.nps-lbl{font:400 10px var(--mono);color:var(--muted2);text-transform:uppercase;letter-spacing:.4px;margin-top:3px}
+
+/* ── FORM ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:13px 15px}
+.fcol{display:flex;flex-direction:column}
+.fspan{grid-column:1/-1}
+.flbl{font:500 10px var(--mono);color:var(--muted2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.fin{width:100%;padding:7px 9px;border:1px solid var(--border2);border-radius:5px;font:400 13px var(--mono);background:var(--bg);color:var(--ink);outline:none;transition:border-color .15s}
+.fin:focus{border-color:var(--ink)}
+select.fin{cursor:pointer}
+.fadd{padding:7px 16px;background:var(--ink);color:#fff;border:none;border-radius:5px;font:600 13px var(--sans);cursor:pointer}
+.fadd:hover{opacity:.85}
+
+/* ── STAT TILES ── */
+.tile{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:13px 15px}
+.tile-lbl{font:500 10px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.tile-val{font:700 20px var(--mono);letter-spacing:-.5px}
+.tile-sub{font:400 11px var(--mono);color:var(--muted2);margin-top:4px}
+.tag{display:inline-block;padding:2px 7px;border-radius:3px;font:600 10px var(--mono);margin-top:5px}
+.tg{background:var(--green-l);color:var(--green)}.tr{background:var(--red-l);color:var(--red)}.ta{background:var(--amber-l);color:var(--amber)}.tb{background:var(--blue-l);color:var(--blue)}.tp{background:var(--purple-l);color:var(--purple)}
+
+/* ── UPLOAD ROW ── */
+.up-row{display:flex;gap:8px;padding:11px 15px;border-top:1px solid var(--border);flex-wrap:wrap}
+.uprowbtn{padding:5px 12px;background:var(--bg);border:1px solid var(--border2);border-radius:5px;font:600 12px var(--sans);color:var(--muted2);cursor:pointer}
+.uprowbtn:hover{border-color:var(--ink);color:var(--ink)}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:28px;color:var(--muted);font:400 12px var(--mono)}
+
+/* ── DELETE BTN ── */
+.delbtn{background:none;border:none;color:var(--muted);cursor:pointer;padding:2px 6px;font-size:12px}
+.delbtn:hover{color:var(--red)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">🐨 Bear & Koala <span class="brand-tag">Decisions</span></div>
+  <div class="ntabs" id="navTabs">
+    <button class="ntab on" onclick="sv('today',this)">Today</button>
+    <button class="ntab" onclick="sv('costs',this)">Costs</button>
+    <button class="ntab" onclick="sv('ads',this)">Advertising</button>
+    <button class="ntab" onclick="sv('staff',this)">Staff</button>
+    <button class="ntab" onclick="sv('newproduct',this)">New Products</button>
+    <button class="ntab" onclick="sv('settings',this)">Settings</button>
+  </div>
+  <div class="nav-r">
+    <span id="statusPill">No data</span>
+    <button id="resetBtn" onclick="resetAll()">Reset</button>
+  </div>
+</nav>
+
+<!-- UPLOAD -->
+<div id="uploadScreen">
+  <div><div class="up-title">Daily Decisions Dashboard</div><div class="up-sub">Upload files or skip to enter manually</div></div>
+  <div class="up-cards">
+    <div class="up-card" id="dz1" ondragover="dov(event,'dz1')" ondragleave="dlv('dz1')" ondrop="ddrop(event,'bank')">
+      <div class="up-ico">🏦</div>
+      <div class="up-name">Bank Statement</div>
+      <div class="up-hint">Starling · Capital on Tap<br>Any UK bank CSV</div>
+      <button class="up-btn" onclick="document.getElementById('bankIn').click()">Upload CSV</button>
+      <input type="file" id="bankIn" accept=".csv" multiple onchange="handleBank(this.files)">
+    </div>
+    <div class="up-card" id="dz2" ondragover="dov(event,'dz2')" ondragleave="dlv('dz2')" ondrop="ddrop(event,'sales')">
+      <div class="up-ico">📊</div>
+      <div class="up-name">Sales Report</div>
+      <div class="up-hint">Amazon · Shopify · TikTok<br>Orders CSV with dates</div>
+      <button class="up-btn" onclick="document.getElementById('salesIn').click()">Upload CSV</button>
+      <input type="file" id="salesIn" accept=".csv" onchange="handleSales(this.files[0])">
+    </div>
+    <div class="up-card" id="dz3" ondragover="dov(event,'dz3')" ondragleave="dlv('dz3')" ondrop="ddrop(event,'inv')">
+      <div class="up-ico">📦</div>
+      <div class="up-name">STK Inventory</div>
+      <div class="up-hint">CSV export from STK<br>Units + cost price</div>
+      <button class="up-btn" onclick="document.getElementById('invIn').click()">Upload CSV</button>
+      <input type="file" id="invIn" accept=".csv" onchange="handleInv(this.files[0])">
+    </div>
+  </div>
+  <span class="skip" onclick="goToDash()">Skip → go to dashboard</span>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dash" style="display:none">
+<main>
+
+<!-- TODAY TAB -->
+<div class="view on" id="view-today">
+  <div class="today-banner" id="todayBanner">
+    <div class="tb-left">
+      <h2 id="tbTitle">Daily Decisions</h2>
+      <p id="tbDate">Loading...</p>
+    </div>
+    <div class="tb-right" id="tbStats"></div>
+  </div>
+
+  <div class="g3" id="todayRecs">
+    <!-- Stock spending rec -->
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">📦 Stock & Restock</div><div class="cbadge" id="stockBadge">—</div></div>
+      <div id="stockRecs"><div class="empty">Upload bank + inventory</div></div>
+    </div>
+    <!-- Packaging rec -->
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">🏭 Packaging</div><div class="cbadge" id="packBadge">—</div></div>
+      <div id="packRecs"><div class="empty">Upload bank statement</div></div>
+    </div>
+    <!-- Software rec -->
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">💻 Software & Tools</div><div class="cbadge" id="softBadge">—</div></div>
+      <div id="softRecs"><div class="empty">Upload bank statement</div></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <!-- Daily budget targets -->
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">📅 Daily Spend Targets</div><div class="cbadge">What to spend today</div></div>
+      <div id="dailyTargets"><div class="empty">Upload bank statement</div></div>
+    </div>
+    <!-- Staff hours this week -->
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">👥 Staff Hours This Week</div><div class="cbadge" id="staffWeekBadge">—</div></div>
+      <div id="staffWeekRec"><div class="empty">Upload sales data</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- COSTS TAB -->
+<div class="view" id="view-costs">
+  <div class="phdr-row phdr">
+    <div><div class="ptitle">Cost Breakdown</div><div class="psub">Auto-detected from bank statement + manual entries</div></div>
+    <button class="add-more-btn" onclick="document.getElementById('bankIn2').click()">+ Bank Statement</button>
+    <input type="file" id="bankIn2" accept=".csv" multiple onchange="handleBank(this.files,true)">
+  </div>
+
+  <div class="g4" id="costStats">
+    <div class="tile"><div class="tile-lbl">Software</div><div class="tile-val" id="cs-soft">—</div><div class="tile-sub">Subscriptions & tools</div></div>
+    <div class="tile"><div class="tile-lbl">Staff</div><div class="tile-val" id="cs-staff">—</div><div class="tile-sub">Wages & contractor</div></div>
+    <div class="tile"><div class="tile-lbl">Packaging</div><div class="tile-val" id="cs-pack">—</div><div class="tile-sub">Bags, boxes, labels</div></div>
+    <div class="tile"><div class="tile-lbl">Other Fixed</div><div class="tile-val" id="cs-other">—</div><div class="tile-sub">Rent, utilities, misc</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">All Cost Categories</div><div class="cbadge">From bank</div></div>
+      <div id="allCosts"><div class="empty">Upload bank statement</div></div>
+    </div>
+    <div class="gcol">
+      <div class="card">
+        <div class="card-hdr"><div class="card-title">Manual Cost Entries</div><div class="cbadge" id="manCostBadge">0</div></div>
+        <div id="manCostRows"><div class="empty">Add costs not in bank</div></div>
+        <div class="form-grid" style="border-top:1px solid var(--border)">
+          <div class="fcol"><div class="flbl">Description</div><input class="fin" id="mcDesc" placeholder="e.g. Accountant fees"></div>
+          <div class="fcol"><div class="flbl">Category</div>
+            <select class="fin" id="mcCat">
+              <option>Software</option><option>Staff</option><option>Packaging</option><option>Rent/Premises</option><option>Utilities</option><option>Other</option>
+            </select>
+          </div>
+          <div class="fcol"><div class="flbl">Monthly (£)</div><input class="fin" id="mcAmt" type="number" placeholder="0"></div>
+          <div class="fcol" style="justify-content:flex-end"><button class="fadd" onclick="addManCost()" style="margin-top:14px">Add</button></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><div class="card-title">Cost Health</div></div>
+        <div style="padding:13px 15px" id="costHealth"><div class="empty">Upload bank data</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADS TAB -->
+<div class="view" id="view-ads">
+  <div class="phdr-row phdr">
+    <div><div class="ptitle">Advertising</div><div class="psub">Platform performance + recommended spend</div></div>
+  </div>
+
+  <div id="adRecommendation" style="margin-bottom:16px"></div>
+
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Platform Performance</div><div class="cbadge">Based on sales data</div></div>
+      <div class="platform-grid" id="platformGrid"><div class="empty">Upload sales CSV to see platform performance</div></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Recommended Ad Spend</div><div class="cbadge" id="adBudgetBadge">—</div></div>
+      <div id="adSpendRecs"><div class="empty">Add sales data to get recommendations</div></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Manual Ad Spend</div><div class="cbadge" id="adLogBadge">0 entries</div></div>
+      <div id="adLogRows" style="max-height:240px;overflow-y:auto"><div class="empty">No ad spend logged</div></div>
+      <div class="form-grid" style="border-top:1px solid var(--border)">
+        <div class="fcol"><div class="flbl">Platform</div>
+          <select class="fin" id="adPlatform"><option>Amazon PPC</option><option>TikTok Ads</option><option>GMV Max</option><option>Facebook</option><option>Google</option><option>Other</option></select>
+        </div>
+        <div class="fcol"><div class="flbl">Period</div><input class="fin" id="adPeriod" placeholder="e.g. March 2026"></div>
+        <div class="fcol"><div class="flbl">Spend (£)</div><input class="fin" id="adSpend" type="number" placeholder="0"></div>
+        <div class="fcol"><div class="flbl">Revenue from ads (£)</div><input class="fin" id="adRev" type="number" placeholder="0"></div>
+        <div class="fspan" style="text-align:right"><button class="fadd" onclick="addAdLog()">Log</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">TACOS & ACOS Tracker</div><div class="cbadge">Amazon ad efficiency</div></div>
+      <div id="tacosTracker" style="padding:13px 15px"><div class="empty">Log Amazon PPC spend + revenue above</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- STAFF TAB -->
+<div class="view" id="view-staff">
+  <div class="phdr-row phdr">
+    <div><div class="ptitle">Staff Hours</div><div class="psub">Weekly hours needed based on order volume</div></div>
+  </div>
+
+  <div class="g4" id="staffStats">
+    <div class="tile"><div class="tile-lbl">Orders This Week</div><div class="tile-val" id="ss-orders">—</div></div>
+    <div class="tile"><div class="tile-lbl">Hours Needed</div><div class="tile-val" id="ss-hours">—</div></div>
+    <div class="tile"><div class="tile-lbl">Est. Staff Cost</div><div class="tile-val" id="ss-cost">—</div></div>
+    <div class="tile"><div class="tile-lbl">Hours per Order</div><div class="tile-val" id="ss-hpo">—</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Weekly Staff Plan</div><div class="cbadge">Based on order forecast</div></div>
+      <div id="staffPlan"><div class="empty">Upload sales data to see staff plan</div></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Staff Settings</div></div>
+      <div class="form-grid">
+        <div class="fcol"><div class="flbl">Minutes per order (pick+pack)</div><input class="fin" id="ss-mpo" type="number" value="8" onchange="renderStaff()"></div>
+        <div class="fcol"><div class="flbl">Hourly rate (£)</div><input class="fin" id="ss-rate" type="number" value="11.44" onchange="renderStaff()"></div>
+        <div class="fcol"><div class="flbl">Working hours/day</div><input class="fin" id="ss-hpd" type="number" value="8" onchange="renderStaff()"></div>
+        <div class="fcol"><div class="flbl">Days per week</div><input class="fin" id="ss-dpw" type="number" value="5" onchange="renderStaff()"></div>
+        <div class="fspan">
+          <div class="flbl" style="margin-bottom:6px">Staff Members</div>
+          <div id="staffMembers"></div>
+        </div>
+        <div class="fcol"><div class="flbl">Name</div><input class="fin" id="smName" placeholder="e.g. Jamie"></div>
+        <div class="fcol" style="justify-content:flex-end"><button class="fadd" onclick="addStaffMember()" style="margin-top:14px">Add</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NEW PRODUCT TAB -->
+<div class="view" id="view-newproduct">
+  <div class="phdr-row phdr">
+    <div><div class="ptitle">New Product Investment</div><div class="psub">Should you spend on a new product? How much?</div></div>
+  </div>
+
+  <div id="npDecision" style="margin-bottom:16px"></div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Evaluate a New Product</div></div>
+      <div class="form-grid">
+        <div class="fcol fspan"><div class="flbl">Product Name</div><input class="fin" id="np-name" placeholder="e.g. Ostrich Bone Chew 150g"></div>
+        <div class="fcol"><div class="flbl">Category</div>
+          <select class="fin" id="np-cat">
+            <option>Yak Chews</option><option>Rabbit Ears</option><option>Dog Treats</option><option>Chews</option><option>New Category</option>
+          </select>
+        </div>
+        <div class="fcol"><div class="flbl">Channel</div>
+          <select class="fin" id="np-chan">
+            <option>Amazon</option><option>TikTok</option><option>eBay</option><option>All</option>
+          </select>
+        </div>
+        <div class="fcol"><div class="flbl">Min Order Qty</div><input class="fin" id="np-moq" type="number" placeholder="500"></div>
+        <div class="fcol"><div class="flbl">Cost per Unit (£)</div><input class="fin" id="np-cost" type="number" placeholder="2.50"></div>
+        <div class="fcol"><div class="flbl">Target Sell Price (£)</div><input class="fin" id="np-sell" type="number" placeholder="8.99"></div>
+        <div class="fcol"><div class="flbl">Est. Monthly Sales (units)</div><input class="fin" id="np-sales" type="number" placeholder="200"></div>
+        <div class="fcol"><div class="flbl">Platform Fees (%)</div><input class="fin" id="np-fees" type="number" placeholder="15"></div>
+        <div class="fspan" style="text-align:right"><button class="fadd" onclick="evaluateNewProduct()">Evaluate →</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Evaluation Result</div></div>
+      <div id="npResult"><div class="empty">Fill in the form to evaluate</div></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <div class="card-hdr"><div class="card-title">Products Evaluated</div><div class="cbadge" id="npListBadge">0</div></div>
+    <div id="npList"><div class="empty">No products evaluated yet</div></div>
+  </div>
+</div>
+
+<!-- SETTINGS TAB -->
+<div class="view" id="view-settings">
+  <div class="phdr"><div class="ptitle">Settings</div><div class="psub">Business parameters — drives all recommendations</div></div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Revenue & Margins</div></div>
+      <div class="form-grid">
+        <div class="fcol"><div class="flbl">Target monthly revenue (£)</div><input class="fin" id="cfg-targetRev" type="number" placeholder="15000" onchange="saveCfg()"></div>
+        <div class="fcol"><div class="flbl">Avg gross margin (%)</div><input class="fin" id="cfg-margin" type="number" placeholder="45" onchange="saveCfg()"></div>
+        <div class="fcol"><div class="flbl">Monthly fixed costs (£)</div><input class="fin" id="cfg-fixed" type="number" placeholder="3000" onchange="saveCfg()"></div>
+        <div class="fcol"><div class="flbl">Target ad spend (% of revenue)</div><input class="fin" id="cfg-adPct" type="number" placeholder="10" onchange="saveCfg()"></div>
+        <div class="fcol"><div class="flbl">Max TACOS (%)</div><input class="fin" id="cfg-tacos" type="number" placeholder="12" onchange="saveCfg()"></div>
+        <div class="fcol"><div class="flbl">Stock reorder lead time (days)</div><input class="fin" id="cfg-lead" type="number" placeholder="21" onchange="saveCfg()"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Savings Rule</div></div>
+      <div class="form-grid">
+        <div class="fcol"><div class="flbl">Savings rate (% of net)</div><input class="fin" id="cfg-savePct" type="number" placeholder="5" onchange="saveCfg()"></div>
+        <div class="fcol"><div class="flbl">Min safe balance (£)</div><input class="fin" id="cfg-minBal" type="number" placeholder="2000" onchange="saveCfg()"></div>
+        <div class="fcol"><div class="flbl">Re-enable savings above (£)</div><input class="fin" id="cfg-saveOn" type="number" placeholder="5000" onchange="saveCfg()"></div>
+        <div class="fcol"><div class="flbl">Daily stock budget (£)</div><input class="fin" id="cfg-dailyStock" type="number" placeholder="200" onchange="saveCfg()"></div>
+        <div class="fcol"><div class="flbl">Daily packaging budget (£)</div><input class="fin" id="cfg-dailyPack" type="number" placeholder="30" onchange="saveCfg()"></div>
+        <div class="fcol"><div class="flbl">Max new product budget (£)</div><input class="fin" id="cfg-npBudget" type="number" placeholder="1500" onchange="saveCfg()"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+// ─── STATE ──────────────────────────────────────────────────────
+let bankTx=[], salesData=[], invData=[];
+let manCosts=L('bk_mancosts',[]), adLog=L('bk_adlog',[]), staffMembers=L('bk_staff',[]), npEvaluated=L('bk_np',[]);
+let cfg=L('bk_cfg',{targetRev:15000,margin:45,fixed:3000,adPct:10,tacos:12,lead:21,savePct:5,minBal:2000,saveOn:5000,dailyStock:200,dailyPack:30,npBudget:1500});
+
+function L(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}}
+function S(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+function fmt(n){return'£'+Math.abs(n).toLocaleString('en-GB',{minimumFractionDigits:0,maximumFractionDigits:0})}
+function fmt2(n){return'£'+Math.abs(n).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function pct(a,b){return b>0?(a/b*100).toFixed(0)+'%':'—'}
+
+// ─── CATEGORIES ─────────────────────────────────────────────────
+const CATS=[
+  {k:['evri','hermes','royal mail','dpd','dhl','yodel','parcel'],l:'Shipping',g:'shipping',c:'#ef4444'},
+  {k:['amazon'],l:'Amazon',g:'revenue',c:'#f59e0b'},
+  {k:['wayflyer'],l:'Wayflyer',g:'finance',c:'#3b82f6'},
+  {k:['invopak'],l:'Invopak (Packaging)',g:'packaging',c:'#8b5cf6'},
+  {k:['rightpak'],l:'RightPak (Packaging)',g:'packaging',c:'#8b5cf6'},
+  {k:['stickershop','labels','sticker'],l:'Labels/Stickers',g:'packaging',c:'#8b5cf6'},
+  {k:['rosewood','nova dog','nova chew','global herbs','pets choice','yaker','whimzees'],l:'Stock (Suppliers)',g:'stock',c:'#16803c'},
+  {k:['hmrc','vat','paye'],l:'HMRC / VAT / PAYE',g:'tax',c:'#f59e0b'},
+  {k:['tiktok'],l:'TikTok',g:'ads',c:'#aaa'},
+  {k:['google ads','googleads'],l:'Google Ads',g:'ads',c:'#3b82f6'},
+  {k:['facebook','meta ads'],l:'Facebook/Meta Ads',g:'ads',c:'#3b82f6'},
+  {k:['keepa'],l:'Keepa',g:'software',c:'#6366f1'},
+  {k:['smartscout'],l:'SmartScout',g:'software',c:'#6366f1'},
+  {k:['storefeeder'],l:'StoreFeeder',g:'software',c:'#6366f1'},
+  {k:['xero'],l:'Xero',g:'software',c:'#6366f1'},
+  {k:['anthropic','openai','claude'],l:'AI Tools',g:'software',c:'#6366f1'},
+  {k:['freepik','canva','adobe'],l:'Design Tools',g:'software',c:'#6366f1'},
+  {k:['shopify'],l:'Shopify',g:'software',c:'#6366f1'},
+  {k:['dragon','west wales','pest control','broadband','vodafone','o2','bt '],l:'Utilities/Ops',g:'utilities',c:'#64748b'},
+  {k:['wages','salary','payroll','staff'],l:'Staff/Wages',g:'staff',c:'#0891b2'},
+  {k:['rent','lease','unit','warehouse'],l:'Rent/Premises',g:'rent',c:'#64748b'},
+  {k:['lego','wholesale','ebay','aliexpress'],l:'Wholesale Stock',g:'stock',c:'#16803c'},
+];
+function catOf(d){const s=(d||'').toLowerCase();for(const c of CATS)if(c.k.some(k=>s.includes(k)))return c;return{l:'Other',g:'other',c:'#9a9690'}}
+
+// ─── DRAG/DROP ───────────────────────────────────────────────────
+function dov(e,id){e.preventDefault();document.getElementById(id).classList.add('drag')}
+function dlv(id){document.getElementById(id).classList.remove('drag')}
+function ddrop(e,t){e.preventDefault();dlv(e.currentTarget.id);if(t==='bank')handleBank(e.dataTransfer.files);else if(t==='sales')handleSales(e.dataTransfer.files[0]);else handleInv(e.dataTransfer.files[0])}
+
+// ─── FILE HANDLERS ───────────────────────────────────────────────
+function handleBank(files,append=false){
+  if(!append)bankTx=[];
+  let done=0;
+  Array.from(files).forEach(f=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      parseBank(e.target.result).forEach(t=>bankTx.push(t));
+      if(++done===files.length){bankTx.sort((a,b)=>b.date-a.date);goToDash();renderAll()}
+    };r.readAsText(f);
+  });
+}
+function parseBank(csv){
+  const rows=Papa.parse(csv.trim(),{header:true,skipEmptyLines:true}).data;
+  return rows.map(row=>{
+    const r={};Object.keys(row).forEach(k=>{r[k.toLowerCase().trim()]=(row[k]||'').trim()});
+    const date=r['date']||r['transaction date']||r['value date']||r['created at']||'';
+    const desc=r['description']||r['reference']||r['narrative']||r['payee']||r['merchant name']||'';
+    let amt=0;
+    if(r['credit amount']!==undefined||r['debit amount']!==undefined){
+      const cr=parseFloat((r['credit amount']||'0').replace(/[£,]/g,''))||0;
+      const dr=parseFloat((r['debit amount']||'0').replace(/[£,]/g,''))||0;
+      amt=cr>0?cr:-dr;
+    }else if(r['money in']!==undefined||r['money out']!==undefined){
+      const cr=parseFloat((r['money in']||'0').replace(/[£,]/g,''))||0;
+      const dr=parseFloat((r['money out']||'0').replace(/[£,]/g,''))||0;
+      amt=cr>0?cr:-dr;
+    }else{
+      amt=parseFloat((r['amount']||r['value']||'0').replace(/[£,]/g,''))||0;
+    }
+    if(!date||isNaN(new Date(date)))return null;
+    return{date:new Date(date),desc,amount:amt,cat:catOf(desc)};
+  }).filter(Boolean);
+}
+function handleSales(f){
+  if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const rows=Papa.parse(e.target.result.trim(),{header:true,skipEmptyLines:true}).data;
+    salesData=rows.map(row=>{
+      const r={};Object.keys(row).forEach(k=>{r[k.toLowerCase().trim()]=(row[k]||'').trim()});
+      const date=r['date']||r['order date']||r['created at']||r['sale date']||'';
+      const channel=r['channel']||r['source']||r['marketplace']||detectChannel(r)||'Unknown';
+      const rev=parseFloat((r['order amount']||r['sale price']||r['revenue']||r['total']||r['gmv']||r['ordered product sales']||'0').replace(/[£$,]/g,''))||0;
+      const qty=parseInt(r['quantity']||r['qty']||r['units']||'1')||1;
+      if(!date||isNaN(new Date(date)))return null;
+      return{date:new Date(date),channel,revenue:rev,qty};
+    }).filter(Boolean);
+    goToDash();renderAll();
+  };r.readAsText(f);
+}
+function detectChannel(r){
+  const vals=Object.values(r).join(' ').toLowerCase();
+  if(vals.includes('amazon'))return'Amazon';
+  if(vals.includes('tiktok'))return'TikTok';
+  if(vals.includes('ebay'))return'eBay';
+  if(vals.includes('shopify'))return'Shopify';
+  return'Unknown';
+}
+function handleInv(f){
+  if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const rows=Papa.parse(e.target.result.trim(),{header:true,skipEmptyLines:true}).data;
+    invData=rows.map(row=>{
+      const r={};Object.keys(row).forEach(k=>{r[k.toLowerCase().trim()]=(row[k]||'').trim()});
+      return{
+        name:r['product name']||r['name']||r['title']||r['description']||'Unknown',
+        sku:r['sku']||r['product code']||'',
+        units:parseInt(r['quantity']||r['units']||r['stock']||r['qty on hand']||'0')||0,
+        cost:parseFloat((r['cost']||r['cost price']||r['unit cost']||'0').replace(/[£,]/g,''))||0,
+      };
+    }).filter(i=>i.units>0);
+    goToDash();renderAll();
+  };r.readAsText(f);
+}
+
+// ─── NAV ─────────────────────────────────────────────────────────
+function sv(id,btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.getElementById('view-'+id).classList.add('on');
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+}
+function goToDash(){
+  document.getElementById('uploadScreen').style.display='none';
+  document.getElementById('dash').style.display='block';
+  document.getElementById('navTabs').style.display='flex';
+  document.getElementById('resetBtn').style.display='block';
+  const p=document.getElementById('statusPill');
+  p.textContent='Live';p.className='status-pill live';
+}
+function resetAll(){
+  bankTx=[];salesData=[];invData=[];
+  document.getElementById('uploadScreen').style.display='flex';
+  document.getElementById('dash').style.display='none';
+  document.getElementById('navTabs').style.display='none';
+  document.getElementById('resetBtn').style.display='none';
+  document.getElementById('statusPill').textContent='No data';
+  document.getElementById('statusPill').className='status-pill';
+}
+
+// ─── RENDER ALL ──────────────────────────────────────────────────
+function renderAll(){renderToday();renderCosts();renderAds();renderStaff();renderNewProduct()}
+
+// ─── TODAY ───────────────────────────────────────────────────────
+function renderToday(){
+  const now=new Date();
+  document.getElementById('tbDate').textContent=now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  const tIn=bankTx.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0);
+  const tOut=bankTx.filter(t=>t.amount<0).reduce((s,t)=>s+Math.abs(t.amount),0);
+  let bal=0;bankTx.forEach(t=>bal+=t.amount);
+  const net=tIn-tOut;
+
+  // Status
+  const status=bal<cfg.minBal?'⚠ Low Cash':bal>=cfg.saveOn?'✓ Healthy':'↗ Recovering';
+  document.getElementById('tbTitle').textContent=`Today — ${status}`;
+  document.getElementById('tbStats').innerHTML=`
+    <div class="tb-stat"><div class="tb-val">${fmt(bal)}</div><div class="tb-lbl">Balance</div></div>
+    <div class="tb-stat"><div class="tb-val">${fmt(tIn)}</div><div class="tb-lbl">Total In</div></div>
+    <div class="tb-stat"><div class="tb-val">${fmt(tOut)}</div><div class="tb-lbl">Total Out</div></div>
+    <div class="tb-stat" style="color:${net>=0?'#22c55e':'#ef4444'}"><div class="tb-val">${net>=0?'+':'−'}${fmt(net)}</div><div class="tb-lbl">Net Flow</div></div>
+  `;
+
+  // ── STOCK RECS
+  const stockSpend=bankTx.filter(t=>t.amount<0&&t.cat.g==='stock').reduce((s,t)=>s+Math.abs(t.amount),0);
+  const invVal=invData.reduce((s,i)=>s+(i.units*i.cost),0);
+  const span=getMonthSpan();
+  const dailyStockBudget=cfg.dailyStock||200;
+  const stockMonthly=stockSpend/Math.max(span,1);
+  const stockHealth=stockMonthly<=cfg.targetRev*(cfg.margin/100)*0.4?'ok':'high';
+  document.getElementById('stockBadge').textContent=fmt(stockMonthly)+'/mo avg';
+  document.getElementById('stockRecs').innerHTML=`
+    ${rec('g','Restock budget today',`Daily target: ${fmt2(dailyStockBudget)}`,fmt2(dailyStockBudget))}
+    ${rec(stockHealth==='ok'?'g':'a','Monthly stock spend',`${fmt(stockMonthly)}/mo avg · ${stockHealth==='ok'?'Within target':'Slightly high — review margins'}`,fmt(stockSpend))}
+    ${invVal>0?rec('b','Current stock value',`${invData.length} SKUs on hand`,fmt(invVal)):''}
+    ${rec('g','Reorder trigger',`Lead time ${cfg.lead} days — reorder when &lt;${cfg.lead}d stock remains`,'—')}
+  `;
+
+  // ── PACKAGING RECS
+  const packSpend=bankTx.filter(t=>t.amount<0&&t.cat.g==='packaging').reduce((s,t)=>s+Math.abs(t.amount),0);
+  const packMonthly=packSpend/Math.max(span,1);
+  document.getElementById('packBadge').textContent=fmt(packMonthly)+'/mo avg';
+  document.getElementById('packRecs').innerHTML=`
+    ${rec('g','Packaging budget today',`Daily target: ${fmt2(cfg.dailyPack||30)}`,fmt2(cfg.dailyPack||30))}
+    ${rec('b','Monthly packaging spend',`${fmt(packMonthly)}/mo from bank`,fmt(packSpend))}
+    ${rec(packMonthly<tIn*0.05?'g':'a','Packaging vs revenue',`${pct(packMonthly,tIn/Math.max(span,1))} of monthly revenue · target &lt;5%`,'')}
+  `;
+
+  // ── SOFTWARE RECS
+  const softSpend=bankTx.filter(t=>t.amount<0&&t.cat.g==='software').reduce((s,t)=>s+Math.abs(t.amount),0);
+  const softItems=Object.entries(bankTx.filter(t=>t.amount<0&&t.cat.g==='software').reduce((m,t)=>{if(!m[t.desc])m[t.desc]=0;m[t.desc]+=Math.abs(t.amount);return m},{})).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('softBadge').textContent=fmt(softSpend)+' total';
+  document.getElementById('softRecs').innerHTML=(softItems.length?softItems.slice(0,5).map(([d,a])=>`${rec('p',d,'Software subscription',fmt2(a))}`).join(''):`<div class="empty">No software detected in bank</div>`)+
+    rec('p','Monthly software total',`${softItems.length} tools detected`,fmt(softSpend));
+
+  // ── DAILY TARGETS
+  const monthlyIn=bankTx.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0)/Math.max(span,1);
+  const adTarget=monthlyIn*(cfg.adPct/100)/30;
+  const stockTarget=cfg.dailyStock;
+  const packTarget=cfg.dailyPack||30;
+  const softTarget=softSpend/Math.max(span,1)/30;
+  const totalDaily=adTarget+stockTarget+packTarget+softTarget;
+  document.getElementById('dailyTargets').innerHTML=`
+    <div class="sb-row"><div class="sb-cat"><div class="sb-name">📦 Stock & Restock</div><div class="sb-sub">To maintain stock levels</div></div><div class="sb-amt" style="color:var(--green)">${fmt2(stockTarget)}</div></div>
+    <div class="sb-row"><div class="sb-cat"><div class="sb-name">📣 Advertising</div><div class="sb-sub">${cfg.adPct}% of monthly revenue</div></div><div class="sb-amt" style="color:var(--blue)">${fmt2(adTarget)}</div></div>
+    <div class="sb-row"><div class="sb-cat"><div class="sb-name">🏭 Packaging</div><div class="sb-sub">Bags, boxes, labels</div></div><div class="sb-amt" style="color:var(--purple)">${fmt2(packTarget)}</div></div>
+    <div class="sb-row"><div class="sb-cat"><div class="sb-name">💻 Software</div><div class="sb-sub">Avg daily (monthly ÷ 30)</div></div><div class="sb-amt" style="color:var(--muted2)">${fmt2(softTarget)}</div></div>
+    <div class="sb-row" style="background:var(--bg)"><div class="sb-cat"><div class="sb-name" style="font-weight:700">Total daily budget</div></div><div class="sb-amt" style="font-size:15px">${fmt2(totalDaily)}</div></div>
+  `;
+
+  renderStaffWeek();
+}
+
+function rec(color,label,sub,amount){
+  const dots={g:'dot-g',a:'dot-a',r:'dot-r',b:'dot-b',p:'dot-p'};
+  return`<div class="rec"><div class="rec-dot ${dots[color]||'dot-b'}"></div><div class="rec-body"><div class="rec-label">${label}</div><div class="rec-sub">${sub}</div>${amount?`<div class="rec-amount">${amount}</div>`:''}</div></div>`;
+}
+
+// ─── COSTS ───────────────────────────────────────────────────────
+function renderCosts(){
+  const groups={software:0,staff:0,packaging:0,rent:0,utilities:0,shipping:0,stock:0,ads:0,tax:0,finance:0,other:0};
+  bankTx.filter(t=>t.amount<0).forEach(t=>{const g=t.cat.g||'other';if(groups[g]!==undefined)groups[g]+=Math.abs(t.amount);else groups.other+=Math.abs(t.amount)});
+  manCosts.forEach(c=>{const g=c.cat.toLowerCase();const key=g.includes('soft')?'software':g.includes('staff')?'staff':g.includes('pack')?'packaging':g.includes('rent')?'rent':g.includes('util')?'utilities':'other';groups[key]+=(c.monthly||0)});
+
+  document.getElementById('cs-soft').textContent=fmt(groups.software);
+  document.getElementById('cs-staff').textContent=fmt(groups.staff);
+  document.getElementById('cs-pack').textContent=fmt(groups.packaging);
+  document.getElementById('cs-other').textContent=fmt(groups.utilities+groups.rent+groups.other);
+
+  // All costs breakdown
+  const catTotals={};
+  bankTx.filter(t=>t.amount<0).forEach(t=>{if(!catTotals[t.cat.l])catTotals[t.cat.l]={total:0,c:t.cat.c};catTotals[t.cat.l].total+=Math.abs(t.amount)});
+  const sorted=Object.entries(catTotals).sort((a,b)=>b[1].total-a[1].total);
+  const maxV=sorted[0]?.[1].total||1;
+  const totalSpend=sorted.reduce((s,[,d])=>s+d.total,0);
+  document.getElementById('allCosts').innerHTML=sorted.map(([name,d])=>`
+    <div class="sb-row">
+      <div class="sb-cat"><div class="sb-name">${name}</div><div class="sb-sub">${pct(d.total,totalSpend)} of total</div></div>
+      <div class="sb-bar-wrap"><div class="sb-bar-bg"><div class="sb-bar-fill" style="width:${(d.total/maxV)*100}%;background:${d.c}"></div></div></div>
+      <div class="sb-amt">${fmt(d.total)}</div>
+    </div>
+  `).join('')||'<div class="empty">Upload bank statement</div>';
+
+  // Cost health
+  const tIn=bankTx.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0);
+  const tOut=bankTx.filter(t=>t.amount<0).reduce((s,t)=>s+Math.abs(t.amount),0);
+  const spendPct=tIn>0?(tOut/tIn*100).toFixed(0):0;
+  const softPct=tIn>0?(groups.software/tIn*100).toFixed(1):0;
+  const staffPct=tIn>0?(groups.staff/tIn*100).toFixed(1):0;
+  document.getElementById('costHealth').innerHTML=`
+    <div class="cost-item"><span class="cost-key">Spend / Income ratio</span><span class="cost-val" style="color:${spendPct>85?'var(--red)':spendPct>70?'var(--amber)':'var(--green)'}">${spendPct}%</span></div>
+    <div class="cost-item"><span class="cost-key">Software as % of revenue</span><span class="cost-val" style="color:${softPct>5?'var(--amber)':'var(--green)'}">${softPct}%</span></div>
+    <div class="cost-item"><span class="cost-key">Staff as % of revenue</span><span class="cost-val">${staffPct}%</span></div>
+    <div class="cost-item"><span class="cost-key">Stock spend</span><span class="cost-val" style="color:var(--green)">${fmt(groups.stock)}</span></div>
+    <div class="cost-item"><span class="cost-key">Tax / VAT</span><span class="cost-val">${fmt(groups.tax)}</span></div>
+  `;
+
+  renderManCosts();
+}
+
+function addManCost(){
+  const d=document.getElementById('mcDesc').value.trim();
+  const c=document.getElementById('mcCat').value;
+  const a=parseFloat(document.getElementById('mcAmt').value)||0;
+  if(!d)return;
+  manCosts.push({desc:d,cat:c,monthly:a});S('bk_mancosts',manCosts);
+  ['mcDesc','mcAmt'].forEach(id=>document.getElementById(id).value='');
+  renderCosts();renderToday();
+}
+function delManCost(i){manCosts.splice(i,1);S('bk_mancosts',manCosts);renderCosts()}
+function renderManCosts(){
+  document.getElementById('manCostBadge').textContent=manCosts.length;
+  document.getElementById('manCostRows').innerHTML=manCosts.map((c,i)=>`
+    <div class="sb-row">
+      <div class="sb-cat"><div class="sb-name">${c.desc}</div><div class="sb-sub">${c.cat}</div></div>
+      <div class="sb-amt">${fmt(c.monthly)}/mo</div>
+      <button class="delbtn" onclick="delManCost(${i})">✕</button>
+    </div>
+  `).join('')||'<div class="empty">No manual costs added</div>';
+}
+
+// ─── ADS ─────────────────────────────────────────────────────────
+function renderAds(){
+  // Platform revenue from sales data
+  const platforms={Amazon:{rev:0,orders:0},TikTok:{rev:0,orders:0},eBay:{rev:0,orders:0},Shopify:{rev:0,orders:0}};
+  salesData.forEach(s=>{const p=s.channel;if(platforms[p]){platforms[p].rev+=s.revenue;platforms[p].orders++}});
+
+  // Detect trend — compare last 14d vs previous 14d
+  const now=new Date();
+  const d14=new Date(now-14*86400000);
+  const d28=new Date(now-28*86400000);
+  const recent={};const prev={};
+  salesData.forEach(s=>{
+    const p=s.channel;
+    if(!recent[p])recent[p]=0;if(!prev[p])prev[p]=0;
+    if(s.date>=d14)recent[p]+=s.revenue;
+    else if(s.date>=d28)prev[p]+=s.revenue;
+  });
+
+  const totalRev=Object.values(platforms).reduce((s,p)=>s+p.rev,0);
+  const monthlyIn=bankTx.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0)/Math.max(getMonthSpan(),1);
+  const adBudgetTotal=(totalRev||monthlyIn)*((cfg.adPct||10)/100);
+
+  // Platform cards
+  const platHtml=Object.entries(platforms).filter(([,d])=>d.rev>0||d.orders>0).map(([name,d])=>{
+    const r14=recent[name]||0;const p14=prev[name]||1;
+    const chg=((r14-p14)/p14*100).toFixed(0);
+    const trendClass=chg>5?'up':chg<-5?'dn':'flat';
+    const trendLabel=chg>5?'↑ Growing':chg<-5?'↓ Declining':'→ Stable';
+    const share=totalRev>0?(d.rev/totalRev*100).toFixed(0):0;
+    const suggested=adBudgetTotal*(d.rev/Math.max(totalRev,1));
+    return`<div class="plat">
+      <div class="plat-name"><span class="plat-ico">${name==='Amazon'?'📦':name==='TikTok'?'📱':name==='eBay'?'🛒':'🛍'}</span>${name}</div>
+      <div class="plat-stat">${fmt(d.rev)}</div>
+      <div class="plat-sub">${d.orders} orders · ${share}% of revenue</div>
+      <div class="plat-trend ${trendClass}">${trendLabel} ${Math.abs(chg)}%</div>
+      <div style="font:400 11px var(--mono);color:var(--muted2);margin-top:6px">Suggested ad: ${fmt(suggested)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('platformGrid').innerHTML=platHtml||'<div class="empty">Upload sales CSV to see platform performance</div>';
+
+  // Ad spend recs
+  const topPlatform=Object.entries(recent).sort((a,b)=>b[1]-a[1])[0]?.[0]||'Amazon';
+  document.getElementById('adBudgetBadge').textContent=fmt(adBudgetTotal)+' total';
+  document.getElementById('adSpendRecs').innerHTML=`
+    ${rec('g','Total ad budget',`${cfg.adPct}% of revenue (${fmt(totalRev||monthlyIn)})`,fmt(adBudgetTotal))}
+    ${topPlatform?rec('g',`Top performer: ${topPlatform}`,`${topPlatform} showing strongest recent growth — prioritise here`,fmt(adBudgetTotal*0.6)):''} 
+    ${rec('b','Amazon PPC daily',`Target TACOS ≤${cfg.tacos}% — monitor weekly`,fmt(adBudgetTotal*0.5/30))}
+    ${rec('b','TikTok GMV Max daily',`GMV Max + affiliate content — test £50-100/day`,fmt(Math.min(adBudgetTotal*0.3/30,100)))}
+    ${rec('a','New platform test',`Reserve 10% of ad budget for platform tests`,fmt(adBudgetTotal*0.1))}
+  `;
+
+  // Recommendation banner
+  const hasSales=totalRev>0;
+  const growingPlatform=Object.entries(recent).find(([,v])=>v>(prev[Object.entries(recent).find(([k])=>k===Object.keys(recent)[0])?.[0]]||0));
+  document.getElementById('adRecommendation').innerHTML=`
+    <div style="background:var(--blue-l);border:1px solid rgba(29,78,216,.2);border-radius:8px;padding:14px 18px;display:flex;align-items:center;gap:14px">
+      <span style="font-size:20px">💡</span>
+      <div>
+        <div style="font:600 13px var(--sans)">Ad budget recommendation this week</div>
+        <div style="font:400 12px var(--mono);color:var(--muted2);margin-top:3px">
+          ${hasSales?`Spend ${fmt(adBudgetTotal/4.33)} total this week. Focus on ${topPlatform} — highest revenue. Keep TACOS below ${cfg.tacos}%.`:'Upload sales data for a personalised recommendation. Default: spend '+(cfg.adPct)+'% of target revenue on ads.'}
+        </div>
+      </div>
+      <div style="font:700 20px var(--mono);color:var(--blue);white-space:nowrap">${fmt(adBudgetTotal/4.33)}<span style="font-size:12px;font-weight:400;opacity:.6">/wk</span></div>
+    </div>
+  `;
+
+  renderAdLog();
+  renderTacos();
+}
+
+function addAdLog(){
+  const e={platform:document.getElementById('adPlatform').value,period:document.getElementById('adPeriod').value||new Date().toLocaleDateString('en-GB',{month:'short',year:'numeric'}),spend:parseFloat(document.getElementById('adSpend').value)||0,revenue:parseFloat(document.getElementById('adRev').value)||0};
+  adLog.push(e);S('bk_adlog',adLog);
+  ['adPeriod','adSpend','adRev'].forEach(id=>document.getElementById(id).value='');
+  renderAds();
+}
+function delAdLog(i){adLog.splice(i,1);S('bk_adlog',adLog);renderAds()}
+function renderAdLog(){
+  document.getElementById('adLogBadge').textContent=adLog.length+' entries';
+  document.getElementById('adLogRows').innerHTML=adLog.map((e,i)=>`
+    <div class="sb-row">
+      <div class="sb-cat"><div class="sb-name">${e.platform}</div><div class="sb-sub">${e.period} · ACOS ${e.revenue>0?(e.spend/e.revenue*100).toFixed(0)+'%':'—'}</div></div>
+      <div class="sb-amt">${fmt2(e.spend)} spend</div>
+      <button class="delbtn" onclick="delAdLog(${i})">✕</button>
+    </div>
+  `).join('')||'<div class="empty">No ad spend logged</div>';
+}
+function renderTacos(){
+  const amazon=adLog.filter(e=>e.platform==='Amazon PPC');
+  if(!amazon.length){document.getElementById('tacosTracker').innerHTML='<div class="empty">Log Amazon PPC spend + revenue to track TACOS</div>';return}
+  const totalSpend=amazon.reduce((s,e)=>s+e.spend,0);
+  const totalRev=amazon.reduce((s,e)=>s+e.revenue,0);
+  const tacos=totalRev>0?(totalSpend/totalRev*100).toFixed(1):null;
+  const acos=amazon.filter(e=>e.spend>0&&e.revenue>0).map(e=>(e.spend/e.revenue*100).toFixed(1));
+  const tacosOk=tacos&&+tacos<=cfg.tacos;
+  document.getElementById('tacosTracker').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px">
+        <div style="font:700 22px var(--mono);color:${tacosOk?'var(--green)':'var(--red)'}">${tacos?tacos+'%':'—'}</div>
+        <div style="font:400 10px var(--mono);color:var(--muted2);margin-top:2px">TACOS (target ≤${cfg.tacos}%)</div>
+        <div class="tag ${tacosOk?'tg':'tr'}" style="margin-top:4px">${tacosOk?'✓ On target':'⚠ Over target'}</div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px">
+        <div style="font:700 22px var(--mono)">${fmt2(totalSpend)}</div>
+        <div style="font:400 10px var(--mono);color:var(--muted2);margin-top:2px">Total Amazon PPC spend</div>
+        <div style="font:400 11px var(--mono);color:var(--muted2);margin-top:4px">${fmt2(totalRev)} revenue</div>
+      </div>
+    </div>
+    ${!tacosOk&&tacos?`<div style="background:var(--red-l);border:1px solid rgba(185,28,28,.2);border-radius:6px;padding:10px 12px;font:400 12px var(--mono);color:var(--red)">TACOS at ${tacos}% — above ${cfg.tacos}% target. Consider reducing bids on low-converting keywords or pausing underperforming campaigns.</div>`:''}
+  `;
+}
+
+// ─── STAFF ───────────────────────────────────────────────────────
+function renderStaff(){
+  const mpo=+document.getElementById('ss-mpo').value||8;
+  const rate=+document.getElementById('ss-rate').value||11.44;
+  const hpd=+document.getElementById('ss-hpd').value||8;
+  const dpw=+document.getElementById('ss-dpw').value||5;
+
+  const now=new Date();
+  const weekStart=new Date(now);weekStart.setDate(now.getDate()-now.getDay());weekStart.setHours(0,0,0,0);
+  const weekEnd=new Date(weekStart);weekEnd.setDate(weekStart.getDate()+7);
+
+  // Weekly orders — from sales data or estimate from bank
+  let weekOrders=salesData.filter(s=>s.date>=weekStart&&s.date<=weekEnd).reduce((s,t)=>s+t.qty,0);
+  if(!weekOrders&&bankTx.length){
+    // Estimate from weekly revenue / avg order value
+    const weekRev=bankTx.filter(t=>t.amount>0&&t.date>=weekStart&&t.date<=weekEnd).reduce((s,t)=>s+t.amount,0);
+    weekOrders=Math.round(weekRev/15)||0; // assume £15 avg order
+  }
+  // Forecast if no data this week yet — use last 4 weeks avg
+  if(!weekOrders&&salesData.length){
+    const m4=new Date(now-28*86400000);
+    const past=salesData.filter(s=>s.date>=m4).reduce((s,t)=>s+t.qty,0);
+    weekOrders=Math.round(past/4);
+  }
+
+  const hoursNeeded=Math.ceil((weekOrders*mpo)/60);
+  const staffCost=hoursNeeded*rate;
+  const shifts=Math.ceil(hoursNeeded/(hpd*dpw));
+
+  document.getElementById('ss-orders').textContent=weekOrders||'—';
+  document.getElementById('ss-hours').textContent=hoursNeeded?hoursNeeded+'h':'—';
+  document.getElementById('ss-cost').textContent=hoursNeeded?fmt(staffCost):'—';
+  document.getElementById('ss-hpo').textContent=mpo+'min';
+
+  // Day-by-day plan
+  const daysOfWeek=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const ordersPerDay=salesData.length?daysOfWeek.map((d,i)=>{
+    const dayOrders=salesData.filter(s=>{const dow=(s.date.getDay()+6)%7;return dow===i&&s.date>=new Date(now-28*86400000)});
+    return{day:d,orders:dayOrders.reduce((s,t)=>s+t.qty,0)/4};
+  }):daysOfWeek.map((d,i)=>({day:d,orders:i<5?weekOrders/5:0}));
+
+  document.getElementById('staffPlan').innerHTML=`
+    <div style="padding:10px 15px;background:var(--bg);border-bottom:1px solid var(--border)">
+      <div style="font:400 12px var(--mono);color:var(--muted2)">Based on ${weekOrders} orders this week · ${mpo} min per order · £${rate}/hr</div>
+    </div>
+    ${ordersPerDay.map(d=>{
+      const dayHrs=(d.orders*mpo/60).toFixed(1);
+      const dayCost=fmt(d.orders*mpo/60*rate);
+      return`<div class="staff-row">
+        <div><div class="staff-name">${d.day}</div><div class="staff-sub">${Math.round(d.orders)} orders est.</div></div>
+        <div class="staff-hrs">${dayHrs}h</div>
+        <div class="staff-cost">${dayCost}</div>
+      </div>`;
+    }).join('')}
+    <div class="staff-row" style="background:var(--bg);font-weight:600">
+      <div><div class="staff-name">Total week</div></div>
+      <div class="staff-hrs">${hoursNeeded}h</div>
+      <div class="staff-cost">${fmt(staffCost)}</div>
+    </div>
+  `;
+
+  renderStaffMembers();
+}
+
+function renderStaffWeek(){
+  const mpo=+document.getElementById('ss-mpo').value||8;
+  const rate=+document.getElementById('ss-rate').value||11.44;
+  const now=new Date();
+  const weekStart=new Date(now);weekStart.setDate(now.getDate()-now.getDay());weekStart.setHours(0,0,0,0);
+  let weekOrders=salesData.filter(s=>s.date>=weekStart).reduce((s,t)=>s+t.qty,0)||Math.round(bankTx.filter(t=>t.amount>0&&t.date>=weekStart).reduce((s,t)=>s+t.amount,0)/15);
+  const hoursNeeded=Math.ceil((weekOrders*mpo)/60);
+  document.getElementById('staffWeekBadge').textContent=`${hoursNeeded}h needed`;
+  document.getElementById('staffWeekRec').innerHTML=weekOrders?`
+    ${rec('b','Hours needed this week',`${weekOrders} orders × ${mpo}min each`,hoursNeeded+'h')}
+    ${rec('g','Estimated staff cost',`At £${rate}/hr`,fmt(hoursNeeded*rate))}
+    ${rec(staffMembers.length?'g':'a','Staff assigned',`${staffMembers.length} member(s) · ${staffMembers.length?staffMembers.join(', '):'None added yet'}`,'')}
+  `:'<div class="empty">Upload sales data to calculate staff hours</div>';
+}
+
+function addStaffMember(){
+  const n=document.getElementById('smName').value.trim();
+  if(!n)return;staffMembers.push(n);S('bk_staff',staffMembers);
+  document.getElementById('smName').value='';renderStaff();
+}
+function delStaff(i){staffMembers.splice(i,1);S('bk_staff',staffMembers);renderStaff()}
+function renderStaffMembers(){
+  document.getElementById('staffMembers').innerHTML=staffMembers.map((s,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font:400 13px var(--sans)">
+      <span>👤 ${s}</span><button class="delbtn" onclick="delStaff(${i})">✕</button>
+    </div>
+  `).join('')||'<div style="font:400 12px var(--mono);color:var(--muted2);padding:6px 0">No staff added</div>';
+}
+
+// ─── NEW PRODUCT ─────────────────────────────────────────────────
+function renderNewProduct(){
+  const bal=bankTx.reduce((s,t)=>s+t.amount,0);
+  const monthlyIn=bankTx.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0)/Math.max(getMonthSpan(),1);
+  const canAfford=bal>=cfg.minBal&&monthlyIn>0;
+  const maxBudget=Math.min(cfg.npBudget,Math.max(0,bal-cfg.minBal-500));
+
+  document.getElementById('npDecision').innerHTML=`
+    <div style="background:${canAfford?'var(--green-m)':'var(--red-m)'};border:1px solid ${canAfford?'rgba(22,128,60,.2)':'rgba(185,28,28,.2)'};border-radius:8px;padding:14px 18px;display:flex;align-items:center;gap:14px">
+      <span style="font-size:22px">${canAfford?'✅':'⛔'}</span>
+      <div>
+        <div style="font:600 13px var(--sans)">${canAfford?'Conditions OK — new product investment possible':'Not the right time for a new product investment'}</div>
+        <div style="font:400 12px var(--mono);color:var(--muted2);margin-top:3px">${canAfford?`Max recommended: ${fmt(maxBudget)}. Balance healthy enough to cover MOQ without risking operations.`:`Balance ${fmt(bal)} too close to minimum ${fmt(cfg.minBal)}. Build cash first, then explore new products.`}</div>
+      </div>
+      <div style="font:700 20px var(--mono);color:${canAfford?'var(--green)':'var(--red)'};white-space:nowrap">${canAfford?fmt(maxBudget):'Hold'}</div>
+    </div>
+  `;
+
+  renderNpList();
+}
+
+function evaluateNewProduct(){
+  const name=document.getElementById('np-name').value||'New Product';
+  const moq=parseInt(document.getElementById('np-moq').value)||500;
+  const cost=parseFloat(document.getElementById('np-cost').value)||0;
+  const sell=parseFloat(document.getElementById('np-sell').value)||0;
+  const sales=parseInt(document.getElementById('np-sales').value)||200;
+  const fees=parseFloat(document.getElementById('np-fees').value)||15;
+  const channel=document.getElementById('np-chan').value;
+
+  const totalInvestment=moq*cost;
+  const netSellPrice=sell*(1-(fees/100));
+  const profitPerUnit=netSellPrice-cost;
+  const margin=sell>0?(profitPerUnit/netSellPrice*100).toFixed(0):0;
+  const monthlyProfit=sales*profitPerUnit;
+  const breakEvenMonths=monthlyProfit>0?(totalInvestment/monthlyProfit).toFixed(1):null;
+  const daysToSell=Math.round(moq/(sales/30));
+  const roi=totalInvestment>0?((monthlyProfit*12/totalInvestment)*100).toFixed(0):0;
+  const bal=bankTx.reduce((s,t)=>s+t.amount,0);
+  const canAfford=bal-totalInvestment>=cfg.minBal;
+  const isGood=margin>30&&breakEvenMonths&&+breakEvenMonths<6&&canAfford;
+
+  const result={name,moq,cost,sell,sales,fees,channel,totalInvestment,margin:+margin,breakEven:breakEvenMonths,roi:+roi,daysToSell,isGood,date:new Date().toLocaleDateString('en-GB')};
+  npEvaluated.unshift(result);S('bk_np',npEvaluated);
+
+  document.getElementById('npResult').innerHTML=`
+    <div style="padding:14px 15px">
+      <div style="font:600 14px var(--sans);margin-bottom:12px;color:${isGood?'var(--green)':'var(--amber)'}">
+        ${isGood?'✅ Looks promising':'⚠ Proceed with caution'}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${npStat('Total investment',fmt(totalInvestment))}
+        ${npStat('Gross margin',margin+'%',+margin>35?'tg':+margin>20?'ta':'tr')}
+        ${npStat('Profit per unit',fmt2(profitPerUnit),profitPerUnit>0?'tg':'tr')}
+        ${npStat('Break-even',breakEvenMonths?breakEvenMonths+' months':'—',breakEvenMonths&&+breakEvenMonths<6?'tg':'ta')}
+        ${npStat('Annual ROI',roi+'%',+roi>50?'tg':+roi>25?'ta':'tr')}
+        ${npStat('Days to sell',daysToSell+'d',daysToSell<60?'tg':daysToSell<90?'ta':'tr')}
+        ${npStat('Can afford',canAfford?'Yes':'No — too close to min',canAfford?'tg':'tr')}
+        ${npStat('Channel',channel,'')}
+      </div>
+      ${!canAfford?`<div style="margin-top:10px;padding:8px 10px;background:var(--red-l);border-radius:5px;font:400 12px var(--mono);color:var(--red)">Investment of ${fmt(totalInvestment)} would bring balance to ${fmt(bal-totalInvestment)} — below minimum ${fmt(cfg.minBal)}.</div>`:''}
+    </div>
+  `;
+  renderNpList();
+}
+function npStat(label,val,tagClass=''){
+  return`<div style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:8px 10px"><div style="font:400 10px var(--mono);color:var(--muted2);text-transform:uppercase;margin-bottom:3px">${label}</div><div style="font:700 14px var(--mono)">${val}</div>${tagClass?`<div class="tag ${tagClass}" style="margin-top:3px">${val}</div>`:''}</div>`;
+}
+function renderNpList(){
+  document.getElementById('npListBadge').textContent=npEvaluated.length;
+  document.getElementById('npList').innerHTML=npEvaluated.map((p,i)=>`
+    <div class="sb-row">
+      <div class="sb-cat">
+        <div class="sb-name">${p.name} <span class="tag ${p.isGood?'tg':'ta'}" style="font-size:10px">${p.isGood?'GO':'CAUTION'}</span></div>
+        <div class="sb-sub">${p.channel} · ${p.margin}% margin · ${p.breakEven}mo break-even · ${p.date}</div>
+      </div>
+      <div class="sb-amt">${fmt(p.totalInvestment)}</div>
+      <button class="delbtn" onclick="delNp(${i})">✕</button>
+    </div>
+  `).join('')||'<div class="empty">No products evaluated yet</div>';
+}
+function delNp(i){npEvaluated.splice(i,1);S('bk_np',npEvaluated);renderNpList()}
+
+// ─── CONFIG ──────────────────────────────────────────────────────
+function saveCfg(){
+  cfg={
+    targetRev:+document.getElementById('cfg-targetRev').value||15000,
+    margin:+document.getElementById('cfg-margin').value||45,
+    fixed:+document.getElementById('cfg-fixed').value||3000,
+    adPct:+document.getElementById('cfg-adPct').value||10,
+    tacos:+document.getElementById('cfg-tacos').value||12,
+    lead:+document.getElementById('cfg-lead').value||21,
+    savePct:+document.getElementById('cfg-savePct').value||5,
+    minBal:+document.getElementById('cfg-minBal').value||2000,
+    saveOn:+document.getElementById('cfg-saveOn').value||5000,
+    dailyStock:+document.getElementById('cfg-dailyStock').value||200,
+    dailyPack:+document.getElementById('cfg-dailyPack').value||30,
+    npBudget:+document.getElementById('cfg-npBudget').value||1500,
+  };S('bk_cfg',cfg);renderAll();
+}
+function loadCfg(){
+  const fields={targetRev:15000,margin:45,fixed:3000,adPct:10,tacos:12,lead:21,savePct:5,minBal:2000,saveOn:5000,dailyStock:200,dailyPack:30,npBudget:1500};
+  Object.keys(fields).forEach(k=>{const el=document.getElementById('cfg-'+k);if(el)el.value=cfg[k]||fields[k]});
+}
+
+// ─── UTIL ────────────────────────────────────────────────────────
+function getMonthSpan(){
+  if(!bankTx.length)return 1;
+  const d=bankTx.map(t=>t.date);
+  return Math.max((Math.max(...d)-Math.min(...d))/(1000*60*60*24*30),0.5);
+}
+
+// ─── INIT ────────────────────────────────────────────────────────
+loadCfg();renderManCosts();renderAdLog();renderStaffMembers();renderNpList();
+</script>
+</body>
+</html>
