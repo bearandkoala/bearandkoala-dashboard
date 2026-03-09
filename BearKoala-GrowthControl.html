@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bear & Koala — Growth Control</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0d;
+  --s1:#141414;
+  --s2:#1a1a1a;
+  --s3:#222;
+  --border:#2a2a2a;
+  --border2:#333;
+  --text:#f0ede8;
+  --muted:#666;
+  --muted2:#888;
+  --green:#22c55e;
+  --green-d:#15803d;
+  --green-bg:rgba(34,197,94,.08);
+  --amber:#f59e0b;
+  --amber-bg:rgba(245,158,11,.08);
+  --red:#ef4444;
+  --red-bg:rgba(239,68,68,.08);
+  --blue:#3b82f6;
+  --blue-bg:rgba(59,130,246,.08);
+  --mono:'DM Mono',monospace;
+  --sans:'DM Sans',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh}
+
+/* NAV */
+nav{background:var(--s1);border-bottom:1px solid var(--border);height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:50}
+.brand{font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;letter-spacing:-.3px}
+.brand-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+.ntabs{display:flex;gap:2px}
+.ntab{padding:5px 13px;border-radius:5px;border:none;background:transparent;font-family:var(--sans);font-size:13px;font-weight:500;color:var(--muted2);cursor:pointer;transition:all .15s}
+.ntab:hover{color:var(--text)}
+.ntab.on{background:var(--s3);color:var(--text)}
+.nav-r{display:flex;gap:8px;align-items:center}
+#resetBtn{display:none;padding:4px 11px;border-radius:5px;border:1px solid var(--border2);background:transparent;font:600 12px var(--sans);color:var(--muted2);cursor:pointer}
+#resetBtn:hover{border-color:var(--red);color:var(--red)}
+.status-pill{padding:3px 10px;border-radius:20px;font:500 11px var(--mono);border:1px solid var(--border2);color:var(--muted2)}
+.status-pill.live{border-color:rgba(34,197,94,.4);color:var(--green);background:var(--green-bg)}
+
+/* VIEWS */
+.view{display:none}.view.on{display:block}
+main{max-width:1200px;margin:0 auto;padding:24px}
+
+/* UPLOAD SCREEN */
+#uploadScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 52px);gap:28px}
+.up-hero{text-align:center}
+.up-hero h1{font-size:28px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px}
+.up-hero p{color:var(--muted2);font-size:14px}
+.up-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:760px;width:100%}
+.up-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:22px;cursor:pointer;transition:border-color .15s;text-align:center}
+.up-card:hover,.up-card.drag{border-color:var(--green)}
+.up-card-ico{font-size:28px;margin-bottom:10px}
+.up-card-title{font-weight:700;font-size:13px;margin-bottom:3px}
+.up-card-sub{color:var(--muted2);font-size:11px;font-family:var(--mono);line-height:1.6;margin-bottom:14px}
+.up-btn{padding:6px 16px;background:var(--green);color:#0d0d0d;border:none;border-radius:5px;font:700 12px var(--sans);cursor:pointer}
+.up-btn:hover{opacity:.85}
+input[type=file]{display:none}
+.skip-link{color:var(--muted2);font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.skip-link:hover{color:var(--text)}
+
+/* HEADINGS */
+.phdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.ptitle{font-size:17px;font-weight:700;letter-spacing:-.3px}
+.psub{font-size:12px;color:var(--muted2);font-family:var(--mono);margin-top:2px}
+
+/* CARDS */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)}
+.card-title{font-size:13px;font-weight:600}
+.cbadge{font:400 11px var(--mono);color:var(--muted2);background:var(--s2);border:1px solid var(--border);padding:2px 8px;border-radius:4px}
+
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:18px}
+.gcol{display:flex;flex-direction:column;gap:14px}
+
+/* STATUS CARDS - the main signal */
+.signal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.signal{border-radius:10px;padding:18px;border:1px solid;position:relative;overflow:hidden}
+.signal::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.signal-g{background:var(--green-bg);border-color:rgba(34,197,94,.2)}
+.signal-g::before{background:var(--green)}
+.signal-a{background:var(--amber-bg);border-color:rgba(245,158,11,.2)}
+.signal-a::before{background:var(--amber)}
+.signal-r{background:var(--red-bg);border-color:rgba(239,68,68,.2)}
+.signal-r::before{background:var(--red)}
+.signal-n{background:var(--s2);border-color:var(--border)}
+.signal-n::before{background:var(--muted)}
+.sig-label{font:500 11px var(--mono);color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.sig-status{font-size:20px;font-weight:700;letter-spacing:-.5px;margin-bottom:4px}
+.sig-sub{font:400 12px var(--mono);color:var(--muted2);line-height:1.5}
+.sig-icon{font-size:22px;position:absolute;top:16px;right:16px;opacity:.6}
+
+/* STATS */
+.stats{display:grid;gap:10px;margin-bottom:16px}
+.stat{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+.stat-lbl{font:500 10px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
+.stat-val{font:700 20px var(--mono);letter-spacing:-.5px}
+.stat-sub{font:400 11px var(--mono);color:var(--muted2);margin-top:4px}
+.tag{display:inline-block;padding:2px 7px;border-radius:3px;font:600 11px var(--mono);margin-top:5px}
+.tg{background:var(--green-bg);color:var(--green)}
+.tr{background:var(--red-bg);color:var(--red)}
+.ta{background:var(--amber-bg);color:var(--amber)}
+.tb{background:var(--blue-bg);color:var(--blue)}
+
+/* TABLE ROWS */
+.trow{display:grid;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);transition:background .1s}
+.trow:last-child{border-bottom:none}
+.trow:hover{background:var(--s2)}
+.tname{font-size:13px;font-weight:600}
+.tsub{font:400 11px var(--mono);color:var(--muted2);margin-top:2px}
+.tval{font:600 13px var(--mono)}
+.tdel{background:none;border:none;color:var(--muted);cursor:pointer;padding:2px 6px;font-size:13px}
+.tdel:hover{color:var(--red)}
+
+/* PROGRESS BARS */
+.prog-wrap{margin-top:6px}
+.prog-bg{height:4px;background:var(--s3);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;border-radius:2px;transition:width .5s ease}
+.prog-g{background:var(--green)}
+.prog-a{background:var(--amber)}
+.prog-r{background:var(--red)}
+
+/* SELL-THROUGH TABLE */
+.st-table{width:100%;border-collapse:collapse}
+.st-th{font:500 10px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:8px 16px;text-align:left;border-bottom:1px solid var(--border);background:var(--s2)}
+.st-td{padding:10px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.st-tr:last-child .st-td{border-bottom:none}
+.st-tr:hover .st-td{background:rgba(255,255,255,.02)}
+.velocity-bar{display:flex;align-items:center;gap:8px}
+.mini-bar-bg{flex:1;height:4px;background:var(--s3);border-radius:2px;overflow:hidden}
+.mini-bar-fill{height:100%;border-radius:2px}
+.days-badge{display:inline-block;padding:2px 8px;border-radius:4px;font:600 11px var(--mono)}
+.days-g{background:var(--green-bg);color:var(--green)}
+.days-a{background:var(--amber-bg);color:var(--amber)}
+.days-r{background:var(--red-bg);color:var(--red)}
+.days-b{background:var(--s3);color:var(--muted2)}
+.new-badge{display:inline-block;padding:1px 6px;border-radius:3px;font:600 10px var(--mono);background:var(--blue-bg);color:var(--blue);margin-left:5px}
+
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 16px}
+.fcol{display:flex;flex-direction:column}
+.fspan{grid-column:1/-1}
+.flbl{font:500 10px var(--mono);color:var(--muted2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.fin{width:100%;padding:7px 9px;border:1px solid var(--border2);border-radius:5px;font:400 13px var(--mono);background:var(--s2);color:var(--text);outline:none;transition:border-color .15s}
+.fin:focus{border-color:var(--green)}
+select.fin{cursor:pointer}
+.fadd{padding:7px 16px;background:var(--green);color:#0d0d0d;border:none;border-radius:5px;font:700 13px var(--sans);cursor:pointer}
+.fadd:hover{opacity:.85}
+.fbtn2{padding:7px 14px;background:var(--s3);border:1px solid var(--border2);border-radius:5px;font:600 12px var(--sans);color:var(--muted2);cursor:pointer}
+.fbtn2:hover{border-color:var(--text);color:var(--text)}
+
+/* THRESHOLDS */
+.thresh-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)}
+.thresh-row:last-child{border-bottom:none}
+.thresh-label{font-size:13px;font-weight:600}
+.thresh-sub{font:400 11px var(--mono);color:var(--muted2)}
+.thresh-input{width:120px;padding:5px 9px;border:1px solid var(--border2);border-radius:5px;font:400 13px var(--mono);background:var(--s2);color:var(--text);outline:none;text-align:right}
+.thresh-input:focus{border-color:var(--green)}
+
+/* SAVINGS SIGNAL */
+.savings-signal{border-radius:10px;padding:20px 22px;border:1px solid;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.ss-g{background:var(--green-bg);border-color:rgba(34,197,94,.25)}
+.ss-a{background:var(--amber-bg);border-color:rgba(245,158,11,.25)}
+.ss-r{background:var(--red-bg);border-color:rgba(239,68,68,.25)}
+.ss-icon{font-size:32px;flex-shrink:0}
+.ss-body h2{font-size:18px;font-weight:700;letter-spacing:-.3px}
+.ss-body p{font:400 13px var(--mono);color:var(--muted2);margin-top:4px;line-height:1.5}
+.ss-pct{font:700 36px var(--mono);letter-spacing:-1px;flex-shrink:0}
+
+/* SPENDING BUDGETS */
+.budget-row{display:grid;grid-template-columns:1fr 100px 100px 40px;gap:10px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border)}
+.budget-row:last-child{border-bottom:none}
+.bname{font-size:13px;font-weight:600}
+.bsub{font:400 11px var(--mono);color:var(--muted2)}
+
+/* CHART MINI */
+.sparkline{display:flex;align-items:flex-end;gap:2px;height:32px}
+.sp-bar{flex:1;border-radius:1px 1px 0 0;min-height:2px;transition:height .4s}
+
+/* EMPTY */
+.empty{text-align:center;padding:28px;color:var(--muted);font:400 12px var(--mono)}
+
+/* UP ROW */
+.up-row{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border)}
+.up-row-btn{padding:5px 12px;background:var(--s2);border:1px solid var(--border2);border-radius:5px;font:600 12px var(--sans);color:var(--muted2);cursor:pointer}
+.up-row-btn:hover{border-color:var(--text);color:var(--text)}
+
+/* TOOLTIP */
+[title]{cursor:help}
+
+/* GROWTH GUARDRAILS */
+.guardrail{display:flex;align-items:center;gap:14px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.guardrail:last-child{border-bottom:none}
+.gr-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.gr-g{background:var(--green)}
+.gr-a{background:var(--amber)}
+.gr-r{background:var(--red)}
+.gr-n{background:var(--muted)}
+.gr-body{flex:1}
+.gr-rule{font-size:13px;font-weight:600}
+.gr-status{font:400 12px var(--mono);color:var(--muted2)}
+.gr-result{font:600 12px var(--mono)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand"><div class="brand-dot"></div>Bear & Koala — Growth Control</div>
+  <div class="ntabs" id="navTabs">
+    <button class="ntab on" onclick="sv('controls',this)">Controls</button>
+    <button class="ntab" onclick="sv('inventory',this)">Sell-Through</button>
+    <button class="ntab" onclick="sv('spending',this)">Spending</button>
+    <button class="ntab" onclick="sv('settings',this)">Settings</button>
+  </div>
+  <div class="nav-r">
+    <span class="status-pill" id="statusPill">No data</span>
+    <button id="resetBtn" onclick="resetAll()">Reset data</button>
+  </div>
+</nav>
+
+<!-- UPLOAD SCREEN -->
+<div id="uploadScreen">
+  <div class="up-hero">
+    <h1>Growth Control</h1>
+    <p>Upload your STK inventory export and sales reports to get started.</p>
+  </div>
+  <div class="up-cards">
+    <div class="up-card" id="dz1" ondragover="dov(event,'dz1')" ondragleave="dlv('dz1')" ondrop="ddrop(event,'inv')">
+      <div class="up-card-ico">📦</div>
+      <div class="up-card-title">STK Inventory Export</div>
+      <div class="up-card-sub">CSV from STK with SKU,<br>units on hand, cost price</div>
+      <button class="up-btn" onclick="document.getElementById('invIn').click()">Upload CSV</button>
+      <input type="file" id="invIn" accept=".csv" onchange="handleInv(this.files[0])">
+    </div>
+    <div class="up-card" id="dz2" ondragover="dov(event,'dz2')" ondragleave="dlv('dz2')" ondrop="ddrop(event,'sales')">
+      <div class="up-card-ico">📊</div>
+      <div class="up-card-title">Sales Report</div>
+      <div class="up-card-sub">Shopify / TikTok / Amazon<br>orders CSV with dates + qty</div>
+      <button class="up-btn" onclick="document.getElementById('salesIn').click()">Upload CSV</button>
+      <input type="file" id="salesIn" accept=".csv" onchange="handleSales(this.files[0])">
+    </div>
+    <div class="up-card" id="dz3" ondragover="dov(event,'dz3')" ondragleave="dlv('dz3')" ondrop="ddrop(event,'bank')">
+      <div class="up-card-ico">🏦</div>
+      <div class="up-card-title">Bank Statement</div>
+      <div class="up-card-sub">For spend tracking<br>and savings signals</div>
+      <button class="up-btn" onclick="document.getElementById('bankIn').click()">Upload CSV</button>
+      <input type="file" id="bankIn" accept=".csv" multiple onchange="handleBank(this.files)">
+    </div>
+  </div>
+  <span class="skip-link" onclick="goToDash()">Skip uploads — enter data manually →</span>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dash" style="display:none">
+<main>
+
+<!-- CONTROLS TAB -->
+<div class="view on" id="view-controls">
+  <div class="phdr">
+    <div><div class="ptitle">Financial Controls</div><div class="psub" id="ctrlSub">Real-time signals based on your data</div></div>
+  </div>
+
+  <!-- SAVINGS SIGNAL - THE BIG ONE -->
+  <div id="savingsSignal" class="savings-signal ss-a">
+    <div class="ss-icon">💰</div>
+    <div class="ss-body">
+      <h2 id="ssTitle">Calculating...</h2>
+      <p id="ssSub">Add bank data and set your thresholds to get a signal</p>
+    </div>
+    <div class="ss-pct" id="ssPct">—</div>
+  </div>
+
+  <!-- THREE KEY SIGNALS -->
+  <div class="signal-grid">
+    <div class="signal signal-n" id="sig-cashflow">
+      <div class="sig-icon">💵</div>
+      <div class="sig-label">Cash Flow</div>
+      <div class="sig-status" id="cf-status">—</div>
+      <div class="sig-sub" id="cf-sub">Upload bank statement</div>
+    </div>
+    <div class="signal signal-n" id="sig-debt">
+      <div class="sig-icon">📋</div>
+      <div class="sig-label">Debt Load</div>
+      <div class="sig-status" id="dt-status">—</div>
+      <div class="sig-sub" id="dt-sub">Add loans in settings</div>
+    </div>
+    <div class="signal signal-n" id="sig-inventory">
+      <div class="sig-icon">📦</div>
+      <div class="sig-label">Stock Health</div>
+      <div class="sig-status" id="inv-status">—</div>
+      <div class="sig-sub" id="inv-sub">Upload inventory</div>
+    </div>
+  </div>
+
+  <!-- GROWTH GUARDRAILS -->
+  <div class="g2">
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Growth Guardrails</div><div class="cbadge">Auto-calculated</div></div>
+      <div id="guardrailList">
+        <div class="guardrail"><div class="gr-dot gr-n"></div><div class="gr-body"><div class="gr-rule">Debt vs Revenue</div><div class="gr-status">Debt should be &lt;40% of monthly revenue</div></div><div class="gr-result" id="gr-debt">—</div></div>
+        <div class="guardrail"><div class="gr-dot gr-n"></div><div class="gr-body"><div class="gr-rule">Stock Cover</div><div class="gr-status">Average days of stock remaining</div></div><div class="gr-result" id="gr-stock">—</div></div>
+        <div class="guardrail"><div class="gr-dot gr-n"></div><div class="gr-body"><div class="gr-rule">Spend Rate</div><div class="gr-status">Monthly outgoings vs income</div></div><div class="gr-result" id="gr-spend">—</div></div>
+        <div class="guardrail"><div class="gr-dot gr-n"></div><div class="gr-body"><div class="gr-rule">Runway</div><div class="gr-status">Weeks cash covers fixed costs</div></div><div class="gr-result" id="gr-runway">—</div></div>
+        <div class="guardrail"><div class="gr-dot gr-n"></div><div class="gr-body"><div class="gr-rule">Safe to reorder</div><div class="gr-status">Balance after upcoming payments &gt; £<span id="minBalLabel">2,000</span></div></div><div class="gr-result" id="gr-reorder">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">This Month at a Glance</div></div>
+      <div style="padding:14px 16px" id="monthGlance">
+        <div class="empty">Upload bank statement</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MANUAL LOAN + REM INPUT -->
+  <div class="g2">
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Loans & Liabilities</div><div class="cbadge" id="loanBadge">0</div></div>
+      <div id="loanRows"><div class="empty">No loans added</div></div>
+      <div class="form-grid" style="border-top:1px solid var(--border)">
+        <div class="fcol"><div class="flbl">Lender</div><input class="fin" id="lName" placeholder="e.g. Wayflyer"></div>
+        <div class="fcol"><div class="flbl">Outstanding (£)</div><input class="fin" id="lBal" type="number" placeholder="0"></div>
+        <div class="fcol"><div class="flbl">Monthly (£)</div><input class="fin" id="lMonthly" type="number" placeholder="0"></div>
+        <div class="fcol" style="justify-content:flex-end"><button class="fadd" onclick="addLoan()" style="margin-top:14px">Add</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Upcoming Payments Due</div><div class="cbadge" id="remBadge">0</div></div>
+      <div id="remRows"><div class="empty">No payments added</div></div>
+      <div class="form-grid" style="border-top:1px solid var(--border)">
+        <div class="fcol"><div class="flbl">Supplier</div><input class="fin" id="rSupp" placeholder="e.g. Invopak"></div>
+        <div class="fcol"><div class="flbl">Amount (£)</div><input class="fin" id="rAmt" type="number" placeholder="0"></div>
+        <div class="fcol"><div class="flbl">Due Date</div><input class="fin" id="rDate" type="date"></div>
+        <div class="fcol" style="justify-content:flex-end"><button class="fadd" onclick="addRem()" style="margin-top:14px">Add</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SELL-THROUGH TAB -->
+<div class="view" id="view-inventory">
+  <div class="phdr">
+    <div><div class="ptitle">Sell-Through & Stock Velocity</div><div class="psub">Based on STK inventory + sales history. New products get predicted rates.</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="fbtn2" onclick="document.getElementById('invIn2').click()">📦 STK Export</button>
+      <button class="fbtn2" onclick="document.getElementById('salesIn2').click()">📊 Sales CSV</button>
+      <input type="file" id="invIn2" accept=".csv" onchange="handleInv(this.files[0])">
+      <input type="file" id="salesIn2" accept=".csv" onchange="handleSales(this.files[0])">
+    </div>
+  </div>
+
+  <div class="g4" id="stStats">
+    <div class="stat"><div class="stat-lbl">Total SKUs</div><div class="stat-val" id="st-skus">—</div></div>
+    <div class="stat"><div class="stat-lbl">Avg Days to Sell</div><div class="stat-val" id="st-avgdays">—</div></div>
+    <div class="stat"><div class="stat-lbl">Stock Value (Cost)</div><div class="stat-val" id="st-val">—</div></div>
+    <div class="stat"><div class="stat-lbl">At Risk (>90 days)</div><div class="stat-val" id="st-risk">—</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-hdr">
+      <div class="card-title">SKU Sell-Through Forecast</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font:400 11px var(--mono);color:var(--muted2)">Sort by:</span>
+        <select class="fin" style="width:auto;padding:3px 8px" onchange="sortST(this.value)" id="stSort">
+          <option value="days">Days remaining</option>
+          <option value="risk">Risk (highest first)</option>
+          <option value="value">Value</option>
+        </select>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="st-table" id="stTable">
+        <thead>
+          <tr>
+            <th class="st-th">Product</th>
+            <th class="st-th">Units</th>
+            <th class="st-th">Daily Velocity</th>
+            <th class="st-th">Days Remaining</th>
+            <th class="st-th">Sell-by Date</th>
+            <th class="st-th">Confidence</th>
+            <th class="st-th">Action</th>
+          </tr>
+        </thead>
+        <tbody id="stBody">
+          <tr><td class="st-td" colspan="7" style="text-align:center;color:var(--muted);font-family:var(--mono)">Upload STK inventory + sales CSV to see forecasts</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="up-row">
+      <button class="up-row-btn" onclick="document.getElementById('invIn3').click()">📦 Upload STK CSV</button>
+      <button class="up-row-btn" onclick="document.getElementById('salesIn3').click()">📊 Upload Sales CSV</button>
+      <input type="file" id="invIn3" accept=".csv" onchange="handleInv(this.files[0])">
+      <input type="file" id="salesIn3" accept=".csv" onchange="handleSales(this.files[0])">
+    </div>
+  </div>
+
+  <!-- NEW PRODUCT PREDICTOR -->
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">New Product Predictor</div><div class="cbadge">Based on category avg velocity</div></div>
+    <div class="form-grid">
+      <div class="fcol"><div class="flbl">Product Name</div><input class="fin" id="npName" placeholder="e.g. Rabbit Ears 200g"></div>
+      <div class="fcol"><div class="flbl">Category</div>
+        <select class="fin" id="npCat">
+          <option>Yak Chews</option><option>Rabbit Ears</option><option>Dog Treats</option><option>Chews</option><option>Other</option>
+        </select>
+      </div>
+      <div class="fcol"><div class="flbl">Units Ordered</div><input class="fin" id="npUnits" type="number" placeholder="500"></div>
+      <div class="fcol"><div class="flbl">Cost per Unit (£)</div><input class="fin" id="npCost" type="number" placeholder="2.50"></div>
+      <div class="fspan" style="text-align:right;display:flex;gap:8px;justify-content:flex-end">
+        <button class="fadd" onclick="predictNew()">Predict →</button>
+      </div>
+    </div>
+    <div id="npResult" style="padding:0 16px 14px"></div>
+  </div>
+</div>
+
+<!-- SPENDING TAB -->
+<div class="view" id="view-spending">
+  <div class="phdr">
+    <div><div class="ptitle">Spending Budgets</div><div class="psub">Set limits per category. Pulled from bank statement automatically.</div></div>
+    <button class="fbtn2" onclick="document.getElementById('bankIn2').click()">+ Bank Statement</button>
+    <input type="file" id="bankIn2" accept=".csv" multiple onchange="handleBank(this.files,true)">
+  </div>
+
+  <div class="g4" id="spendStats">
+    <div class="stat"><div class="stat-lbl">Total Spend</div><div class="stat-val" id="sp-total">—</div></div>
+    <div class="stat"><div class="stat-lbl">Over Budget</div><div class="stat-val" id="sp-over">—</div></div>
+    <div class="stat"><div class="stat-lbl">On Track</div><div class="stat-val" id="sp-ok">—</div></div>
+    <div class="stat"><div class="stat-lbl">Unbudgeted</div><div class="stat-val" id="sp-un">—</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Category Budgets</div><div class="cbadge">Click spend to edit limit</div></div>
+      <div id="budgetRows"><div class="empty">Upload a bank statement first</div></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Add Custom Budget</div></div>
+      <div class="form-grid">
+        <div class="fcol fspan"><div class="flbl">Category Name</div><input class="fin" id="budgCat" placeholder="e.g. Facebook Ads"></div>
+        <div class="fcol"><div class="flbl">Monthly Limit (£)</div><input class="fin" id="budgLimit" type="number" placeholder="500"></div>
+        <div class="fcol" style="justify-content:flex-end"><button class="fadd" onclick="addBudget()" style="margin-top:14px">Add</button></div>
+      </div>
+      <div style="padding:14px 16px;border-top:1px solid var(--border)">
+        <div style="font:600 12px var(--sans);color:var(--muted2);margin-bottom:10px">Quick-add common budgets:</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px" id="quickBudgets">
+          <button class="fbtn2" onclick="quickBudget('Amazon Ads',300)" style="font-size:11px;padding:4px 10px">Amazon Ads</button>
+          <button class="fbtn2" onclick="quickBudget('Stock / Inventory',3000)" style="font-size:11px;padding:4px 10px">Stock</button>
+          <button class="fbtn2" onclick="quickBudget('Shipping',500)" style="font-size:11px;padding:4px 10px">Shipping</button>
+          <button class="fbtn2" onclick="quickBudget('HMRC / VAT',1000)" style="font-size:11px;padding:4px 10px">VAT</button>
+          <button class="fbtn2" onclick="quickBudget('Subscriptions',200)" style="font-size:11px;padding:4px 10px">Subscriptions</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS TAB -->
+<div class="view" id="view-settings">
+  <div class="phdr"><div><div class="ptitle">Thresholds & Settings</div><div class="psub">These drive the signals on the Controls tab</div></div></div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Savings & Cash Targets</div></div>
+      <div class="thresh-row"><div><div class="thresh-label">Savings rate</div><div class="thresh-sub">% of net profit to save (your 5% rule)</div></div><div style="display:flex;align-items:center;gap:6px"><input class="thresh-input" id="ts-savings" type="number" value="5" onchange="saveSettings()"><span style="font:400 12px var(--mono);color:var(--muted2)">%</span></div></div>
+      <div class="thresh-row"><div><div class="thresh-label">Minimum safe balance</div><div class="thresh-sub">Below this = stop saving, focus on cash</div></div><div style="display:flex;align-items:center;gap:6px"><span style="font:400 12px var(--mono);color:var(--muted2)">£</span><input class="thresh-input" id="ts-minbal" type="number" value="2000" onchange="saveSettings()"></div></div>
+      <div class="thresh-row"><div><div class="thresh-label">Re-enable savings above</div><div class="thresh-sub">Balance where it's safe to start saving again</div></div><div style="display:flex;align-items:center;gap:6px"><span style="font:400 12px var(--mono);color:var(--muted2)">£</span><input class="thresh-input" id="ts-savingsOn" type="number" value="5000" onchange="saveSettings()"></div></div>
+      <div class="thresh-row"><div><div class="thresh-label">Weeks runway target</div><div class="thresh-sub">Min weeks of fixed costs to keep as cash</div></div><div style="display:flex;align-items:center;gap:6px"><input class="thresh-input" id="ts-runway" type="number" value="8" onchange="saveSettings()"><span style="font:400 12px var(--mono);color:var(--muted2)">wks</span></div></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Growth Rules</div></div>
+      <div class="thresh-row"><div><div class="thresh-label">Max debt-to-revenue ratio</div><div class="thresh-sub">Total debt as % of monthly revenue (amber)</div></div><div style="display:flex;align-items:center;gap:6px"><input class="thresh-input" id="ts-debtRatio" type="number" value="40" onchange="saveSettings()"><span style="font:400 12px var(--mono);color:var(--muted2)">%</span></div></div>
+      <div class="thresh-row"><div><div class="thresh-label">Stock danger threshold</div><div class="thresh-sub">Days remaining before flagging as risk</div></div><div style="display:flex;align-items:center;gap:6px"><input class="thresh-input" id="ts-stockDanger" type="number" value="21" onchange="saveSettings()"><span style="font:400 12px var(--mono);color:var(--muted2)">days</span></div></div>
+      <div class="thresh-row"><div><div class="thresh-label">Stock warning threshold</div><div class="thresh-sub">Days remaining before amber warning</div></div><div style="display:flex;align-items:center;gap:6px"><input class="thresh-input" id="ts-stockWarn" type="number" value="45" onchange="saveSettings()"><span style="font:400 12px var(--mono);color:var(--muted2)">days</span></div></div>
+      <div class="thresh-row"><div><div class="thresh-label">Spend-to-income ceiling</div><div class="thresh-sub">% of income before flagging overspend</div></div><div style="display:flex;align-items:center;gap:6px"><input class="thresh-input" id="ts-spendCeil" type="number" value="85" onchange="saveSettings()"><span style="font:400 12px var(--mono);color:var(--muted2)">%</span></div></div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+// ─── STATE ─────────────────────────────────────────────────────
+let bankTx=[], inventory=[], salesRows=[], loans=L('bk_loans',[]), remittances=L('bk_rem',[]), budgets=L('bk_budgets',{});
+let settings=L('bk_settings',{savings:5,minBal:2000,savingsOn:5000,runway:8,debtRatio:40,stockDanger:21,stockWarn:45,spendCeil:85});
+
+function L(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}}
+function S(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+function fmt(n){return'£'+Math.abs(n).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function fmtN(n){return Math.abs(n).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}
+
+// Load settings into inputs
+function loadSettings(){
+  document.getElementById('ts-savings').value=settings.savings;
+  document.getElementById('ts-minbal').value=settings.minBal;
+  document.getElementById('ts-savingsOn').value=settings.savingsOn;
+  document.getElementById('ts-runway').value=settings.runway;
+  document.getElementById('ts-debtRatio').value=settings.debtRatio;
+  document.getElementById('ts-stockDanger').value=settings.stockDanger;
+  document.getElementById('ts-stockWarn').value=settings.stockWarn;
+  document.getElementById('ts-spendCeil').value=settings.spendCeil;
+}
+function saveSettings(){
+  settings={
+    savings:+document.getElementById('ts-savings').value,
+    minBal:+document.getElementById('ts-minbal').value,
+    savingsOn:+document.getElementById('ts-savingsOn').value,
+    runway:+document.getElementById('ts-runway').value,
+    debtRatio:+document.getElementById('ts-debtRatio').value,
+    stockDanger:+document.getElementById('ts-stockDanger').value,
+    stockWarn:+document.getElementById('ts-stockWarn').value,
+    spendCeil:+document.getElementById('ts-spendCeil').value,
+  };
+  S('bk_settings',settings);
+  document.getElementById('minBalLabel').textContent=settings.minBal.toLocaleString();
+  renderControls();
+}
+
+// ─── DRAG/DROP ─────────────────────────────────────────────────
+function dov(e,id){e.preventDefault();document.getElementById(id).classList.add('drag')}
+function dlv(id){document.getElementById(id).classList.remove('drag')}
+function ddrop(e,t){e.preventDefault();dlv(e.currentTarget.id);if(t==='inv')handleInv(e.dataTransfer.files[0]);else if(t==='sales')handleSales(e.dataTransfer.files[0]);else handleBank(e.dataTransfer.files)}
+
+// ─── FILE HANDLERS ─────────────────────────────────────────────
+function handleInv(f){
+  if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const rows=Papa.parse(e.target.result.trim(),{header:true,skipEmptyLines:true}).data;
+    inventory=rows.map(row=>{
+      const r={};Object.keys(row).forEach(k=>{r[k.toLowerCase().trim()]=(row[k]||'').trim()});
+      return{
+        name:r['product name']||r['name']||r['title']||r['description']||r['sku']||'Unknown',
+        sku:r['sku']||r['product code']||r['barcode']||'',
+        units:parseInt(r['quantity']||r['units']||r['stock']||r['qty on hand']||r['on hand']||'0')||0,
+        cost:parseFloat((r['cost']||r['cost price']||r['unit cost']||'0').replace(/[£,]/g,''))||0,
+        isNew:false,
+        addedDate:new Date()
+      };
+    }).filter(i=>i.units>0||i.name!=='Unknown');
+    goToDash();renderAll();
+  };r.readAsText(f);
+}
+
+function handleSales(f){
+  if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const rows=Papa.parse(e.target.result.trim(),{header:true,skipEmptyLines:true}).data;
+    salesRows=rows.map(row=>{
+      const r={};Object.keys(row).forEach(k=>{r[k.toLowerCase().trim()]=(row[k]||'').trim()});
+      const date=r['date']||r['order date']||r['created at']||r['sale date']||'';
+      const sku=r['sku']||r['product sku']||r['variant sku']||'';
+      const name=r['product']||r['title']||r['name']||r['product title']||r['item']||sku||'';
+      const qty=parseInt(r['quantity']||r['qty']||r['units']||r['quantity sold']||'1')||1;
+      if(!date||isNaN(new Date(date)))return null;
+      return{date:new Date(date),sku,name,qty};
+    }).filter(Boolean);
+    goToDash();renderAll();
+  };r.readAsText(f);
+}
+
+function handleBank(files,append=false){
+  if(!append)bankTx=[];
+  let done=0;
+  Array.from(files).forEach(f=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      parseBank(e.target.result,f.name).forEach(t=>bankTx.push(t));
+      if(++done===files.length){bankTx.sort((a,b)=>b.date-a.date);goToDash();renderAll()}
+    };r.readAsText(f);
+  });
+}
+
+function parseBank(csv,fname){
+  const rows=Papa.parse(csv.trim(),{header:true,skipEmptyLines:true}).data;
+  return rows.map(row=>{
+    const r={};Object.keys(row).forEach(k=>{r[k.toLowerCase().trim()]=(row[k]||'').trim()});
+    const date=r['date']||r['transaction date']||r['value date']||r['created at']||'';
+    const desc=r['description']||r['reference']||r['narrative']||r['payee']||'';
+    let amt=0;
+    if(r['credit amount']!==undefined||r['debit amount']!==undefined){
+      const cr=parseFloat((r['credit amount']||'0').replace(/[£,]/g,''))||0;
+      const dr=parseFloat((r['debit amount']||'0').replace(/[£,]/g,''))||0;
+      amt=cr>0?cr:-dr;
+    }else if(r['money in']!==undefined||r['money out']!==undefined){
+      const cr=parseFloat((r['money in']||'0').replace(/[£,]/g,''))||0;
+      const dr=parseFloat((r['money out']||'0').replace(/[£,]/g,''))||0;
+      amt=cr>0?cr:-dr;
+    }else{
+      amt=parseFloat((r['amount']||r['value']||'0').replace(/[£,]/g,''))||0;
+    }
+    if(!date||isNaN(new Date(date)))return null;
+    return{date:new Date(date),desc,amount:amt};
+  }).filter(Boolean);
+}
+
+// ─── NAV ───────────────────────────────────────────────────────
+function sv(id,btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.getElementById('view-'+id).classList.add('on');
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+}
+function goToDash(){
+  document.getElementById('uploadScreen').style.display='none';
+  document.getElementById('dash').style.display='block';
+  document.getElementById('navTabs').style.display='flex';
+  document.getElementById('resetBtn').style.display='block';
+  document.getElementById('statusPill').textContent='Live';
+  document.getElementById('statusPill').className='status-pill live';
+}
+function resetAll(){
+  bankTx=[];inventory=[];salesRows=[];
+  document.getElementById('uploadScreen').style.display='flex';
+  document.getElementById('dash').style.display='none';
+  document.getElementById('navTabs').style.display='none';
+  document.getElementById('resetBtn').style.display='none';
+  document.getElementById('statusPill').textContent='No data';
+  document.getElementById('statusPill').className='status-pill';
+}
+
+// ─── RENDER ALL ────────────────────────────────────────────────
+function renderAll(){renderControls();renderSellThrough();renderSpending()}
+
+// ─── CATEGORIES ────────────────────────────────────────────────
+const CATS=[
+  {k:['evri','hermes'],l:'Shipping',c:'#ef4444'},
+  {k:['amazon'],l:'Amazon',c:'#f59e0b'},
+  {k:['wayflyer'],l:'Wayflyer',c:'#3b82f6'},
+  {k:['invopak','rightpak'],l:'Packaging',c:'#8b5cf6'},
+  {k:['rosewood','nova dog','global herbs','pets choice'],l:'Stock / Inventory',c:'#22c55e'},
+  {k:['hmrc','vat'],l:'HMRC / VAT',c:'#f59e0b'},
+  {k:['tiktok'],l:'TikTok',c:'#aaa'},
+  {k:['ebay'],l:'eBay',c:'#ef4444'},
+  {k:['google'],l:'Google',c:'#3b82f6'},
+  {k:['keepa','freepik','anthropic'],l:'Subscriptions',c:'#6366f1'},
+  {k:['dragon'],l:'WiFi / Utilities',c:'#64748b'},
+];
+function catOf(d){const s=(d||'').toLowerCase();for(const c of CATS)if(c.k.some(k=>s.includes(k)))return c;return{l:'Other',c:'#555'}}
+
+// ─── CONTROLS ──────────────────────────────────────────────────
+function renderControls(){
+  const tIn=bankTx.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0);
+  const tOut=bankTx.filter(t=>t.amount<0).reduce((s,t)=>s+Math.abs(t.amount),0);
+  const net=tIn-tOut;
+  let bal=0;bankTx.forEach(t=>bal+=t.amount);
+  const totalDebt=loans.reduce((s,l)=>s+(l.balance||0),0);
+  const monthlyDebt=loans.reduce((s,l)=>s+(l.monthly||0),0);
+  const totalDue=remittances.filter(r=>!r.paid).reduce((s,r)=>s+(r.amount||0),0);
+  const availAfterDue=bal-totalDue;
+
+  // ── SAVINGS SIGNAL ──────────────────────────────────────────
+  const ss=document.getElementById('savingsSignal');
+  const ssTitle=document.getElementById('ssTitle');
+  const ssSub=document.getElementById('ssSub');
+  const ssPct=document.getElementById('ssPct');
+  const savingsAmt=net*(settings.savings/100);
+
+  if(bankTx.length===0){
+    ss.className='savings-signal ss-a';
+    ssTitle.textContent='Upload bank data to see savings signal';
+    ssSub.textContent=`Your target is ${settings.savings}% of net profit — set in Settings tab`;
+    ssPct.textContent=`${settings.savings}%`;
+  } else if(bal<settings.minBal){
+    ss.className='savings-signal ss-r';
+    ssTitle.textContent='🔴 Pause savings — cash too low';
+    ssSub.textContent=`Balance ${fmt(bal)} is below your £${settings.minBal.toLocaleString()} minimum. Focus on cash first.`;
+    ssPct.textContent='HOLD';
+  } else if(bal<settings.savingsOn){
+    ss.className='savings-signal ss-a';
+    ssTitle.textContent='🟡 Hold savings — recovering';
+    ssSub.textContent=`Balance ${fmt(bal)} below re-enable threshold of £${settings.savingsOn.toLocaleString()}. Keep building buffer.`;
+    ssPct.textContent='WAIT';
+  } else {
+    ss.className='savings-signal ss-g';
+    ssTitle.textContent=`🟢 Save ${settings.savings}% — conditions met`;
+    ssSub.textContent=`Based on net flow, move ${fmt(savingsAmt)} to savings this period. Balance is healthy at ${fmt(bal)}.`;
+    ssPct.textContent=fmt(savingsAmt);
+  }
+
+  // ── SIGNALS ─────────────────────────────────────────────────
+  if(bankTx.length>0){
+    const pct=tOut/tIn*100;
+    const cfEl=document.getElementById('sig-cashflow');
+    const cfOk=pct<settings.spendCeil;
+    cfEl.className=`signal ${net>0&&cfOk?'signal-g':net<0?'signal-r':'signal-a'}`;
+    document.getElementById('cf-status').textContent=net>=0?`+${fmt(net)}`:`−${fmt(net)}`;
+    document.getElementById('cf-sub').textContent=`Spending ${pct.toFixed(0)}% of income. ${net>=0?'Positive flow':'Negative flow this period.'}`;
+  }
+
+  if(loans.length>0){
+    const monthlyIn=tIn>0?(tIn/Math.max(bankTx.length,1))*30:0;
+    const debtPct=monthlyIn>0?(totalDebt/monthlyIn*100):0;
+    const dtEl=document.getElementById('sig-debt');
+    const dtOk=debtPct<settings.debtRatio;
+    dtEl.className=`signal ${dtOk?'signal-g':debtPct<settings.debtRatio*1.5?'signal-a':'signal-r'}`;
+    document.getElementById('dt-status').textContent=fmt(totalDebt);
+    document.getElementById('dt-sub').textContent=`${debtPct.toFixed(0)}% of monthly revenue. ${fmt(monthlyDebt)}/mo repayments.`;
+  }
+
+  if(inventory.length>0){
+    const avgDays=computeAvgDaysRemaining();
+    const danger=inventory.filter(i=>i._daysLeft!==null&&i._daysLeft<settings.stockDanger).length;
+    const warn=inventory.filter(i=>i._daysLeft!==null&&i._daysLeft<settings.stockWarn).length;
+    const invEl=document.getElementById('sig-inventory');
+    invEl.className=`signal ${danger>0?'signal-r':warn>0?'signal-a':'signal-g'}`;
+    document.getElementById('inv-status').textContent=danger>0?`${danger} critical`:`Avg ${avgDays}d`;
+    document.getElementById('inv-sub').textContent=danger>0?`${danger} SKU(s) below ${settings.stockDanger} days stock`:`${warn} SKU(s) need reorder soon`;
+  }
+
+  // ── GUARDRAILS ──────────────────────────────────────────────
+  const monthlyIn2=bankTx.length>0?(bankTx.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0)/Math.max(getMonthSpan(),1)):0;
+  const monthlyOut2=bankTx.length>0?(bankTx.filter(t=>t.amount<0).reduce((s,t)=>s+Math.abs(t.amount),0)/Math.max(getMonthSpan(),1)):0;
+
+  // Debt vs revenue
+  const dr=monthlyIn2>0?((totalDebt/monthlyIn2)*100).toFixed(0):null;
+  setGR('gr-debt',dr===null?null:+dr,settings.debtRatio,dr===null?'—':`${dr}% (limit ${settings.debtRatio}%)`,'lower');
+
+  // Stock cover
+  const avgD=computeAvgDaysRemaining();
+  setGR('gr-stock',avgD===null?null:100-avgD,50,'avg '+avgD+'d remaining','higher');
+
+  // Spend rate
+  const spendPct=monthlyIn2>0?((monthlyOut2/monthlyIn2)*100).toFixed(0):null;
+  setGR('gr-spend',spendPct===null?null:+spendPct,settings.spendCeil,spendPct===null?'—':`${spendPct}% (limit ${settings.spendCeil}%)`, 'lower');
+
+  // Runway
+  const fixedCostEstimate=monthlyOut2||1;
+  const runwayWeeks=fixedCostEstimate>0?(bal/fixedCostEstimate*4.33).toFixed(1):null;
+  const runwayOk=runwayWeeks!==null&&+runwayWeeks>=settings.runway;
+  document.getElementById('gr-runway').textContent=runwayWeeks===null?'—':`${runwayWeeks} wks`;
+  document.getElementById('gr-runway').style.color=runwayOk?'var(--green)':+runwayWeeks<settings.runway/2?'var(--red)':'var(--amber)';
+  // Update dot for runway
+  const rRows=document.querySelectorAll('.guardrail');
+  if(rRows[3]){rRows[3].querySelector('.gr-dot').className=`gr-dot ${runwayOk?'gr-g':+runwayWeeks<settings.runway/2?'gr-r':'gr-a'}`}
+
+  // Safe to reorder
+  const safeToReorder=availAfterDue>settings.minBal;
+  document.getElementById('gr-reorder').textContent=safeToReorder?`Yes — ${fmt(availAfterDue)} available`:`No — only ${fmt(availAfterDue)} after payments`;
+  document.getElementById('gr-reorder').style.color=safeToReorder?'var(--green)':'var(--red)';
+  if(rRows[4])rRows[4].querySelector('.gr-dot').className=`gr-dot ${safeToReorder?'gr-g':'gr-r'}`;
+
+  // ── MONTH GLANCE ────────────────────────────────────────────
+  const mg=document.getElementById('monthGlance');
+  if(bankTx.length===0){mg.innerHTML='<div class="empty">Upload bank statement</div>';return}
+  const now=new Date();
+  const thisMonth=bankTx.filter(t=>t.date.getMonth()===now.getMonth()&&t.date.getFullYear()===now.getFullYear());
+  const mIn=thisMonth.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0);
+  const mOut=thisMonth.filter(t=>t.amount<0).reduce((s,t)=>s+Math.abs(t.amount),0);
+  const mNet=mIn-mOut;
+  mg.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><div style="font:500 10px var(--mono);color:var(--muted2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">This Month In</div><div style="font:700 16px var(--mono);color:var(--green)">${fmt(mIn)}</div></div>
+      <div><div style="font:500 10px var(--mono);color:var(--muted2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">This Month Out</div><div style="font:700 16px var(--mono);color:var(--red)">${fmt(mOut)}</div></div>
+      <div><div style="font:500 10px var(--mono);color:var(--muted2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Net</div><div style="font:700 16px var(--mono);color:${mNet>=0?'var(--green)':'var(--red)'}">${mNet>=0?'+':'−'}${fmt(mNet)}</div></div>
+      <div><div style="font:500 10px var(--mono);color:var(--muted2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Suggested Save</div><div style="font:700 16px var(--mono);color:${bal>=settings.savingsOn?'var(--green)':'var(--muted2)'}">${bal>=settings.savingsOn?fmt(mNet*(settings.savings/100)):'On hold'}</div></div>
+    </div>
+  `;
+
+  renderLoans();renderRem();
+}
+
+function setGR(id,val,thresh,label,dir){
+  const el=document.getElementById(id);
+  if(val===null){el.textContent='—';el.style.color='var(--muted)';return}
+  const ok=dir==='lower'?val<=thresh:val>=thresh;
+  const warn=dir==='lower'?val<=thresh*1.25:val>=thresh*0.75;
+  el.textContent=label;
+  el.style.color=ok?'var(--green)':warn?'var(--amber)':'var(--red)';
+  const rows=document.querySelectorAll('.guardrail');
+  const idx={'gr-debt':0,'gr-stock':1,'gr-spend':2,'gr-runway':3,'gr-reorder':4}[id];
+  if(idx!==undefined&&rows[idx]){rows[idx].querySelector('.gr-dot').className=`gr-dot ${ok?'gr-g':warn?'gr-a':'gr-r'}`}
+}
+
+function getMonthSpan(){
+  if(!bankTx.length)return 1;
+  const dates=bankTx.map(t=>t.date);
+  const diff=(Math.max(...dates)-Math.min(...dates))/(1000*60*60*24*30);
+  return Math.max(diff,0.5);
+}
+
+// ─── SELL-THROUGH ──────────────────────────────────────────────
+function computeSellThrough(){
+  // Build sales velocity map from sales data (units per day per SKU/name)
+  const velocity={};
+  const dateCounts={};
+  if(salesRows.length>0){
+    const dates=salesRows.map(s=>s.date);
+    const span=Math.max((Math.max(...dates)-Math.min(...dates))/(1000*60*60*24),1);
+    salesRows.forEach(s=>{
+      const key=(s.sku||s.name||'').toLowerCase();
+      if(!velocity[key]){velocity[key]=0;dateCounts[key]=span}
+      velocity[key]+=s.qty;
+    });
+    Object.keys(velocity).forEach(k=>{velocity[k]=velocity[k]/dateCounts[k]});
+  }
+  // Category averages for new product predictions
+  const catVelocity={'yak chews':2.5,'rabbit ears':3.5,'dog treats':4,'chews':2,'other':1.5};
+
+  return inventory.map(item=>{
+    const key=(item.sku||item.name||'').toLowerCase();
+    // Try exact match first, then fuzzy match
+    let vel=velocity[key];
+    if(!vel){
+      Object.keys(velocity).forEach(k=>{if(key.includes(k)||k.includes(key))vel=velocity[k]});
+    }
+    // Fallback to category average
+    const isNew=!vel;
+    if(!vel){
+      Object.keys(catVelocity).forEach(cat=>{if(key.includes(cat))vel=catVelocity[cat]});
+      vel=vel||catVelocity['other'];
+    }
+    const daysLeft=vel>0?Math.round(item.units/vel):null;
+    item._daysLeft=daysLeft;
+    const sellByDate=daysLeft!==null?new Date(Date.now()+daysLeft*86400000):null;
+    const confidence=isNew?'Predicted':salesRows.length>0?'Historical':'Manual';
+    return{...item,velocity:vel,daysLeft,sellByDate,isNew,confidence};
+  });
+}
+
+function computeAvgDaysRemaining(){
+  const items=computeSellThrough().filter(i=>i.daysLeft!==null);
+  if(!items.length)return null;
+  return Math.round(items.reduce((s,i)=>s+i.daysLeft,0)/items.length);
+}
+
+let stData=[];
+function renderSellThrough(){
+  stData=computeSellThrough();
+  const total=stData.length;
+  const avgDays=stData.filter(i=>i.daysLeft).reduce((s,i)=>s+i.daysLeft,0)/Math.max(stData.filter(i=>i.daysLeft).length,1);
+  const totalVal=stData.reduce((s,i)=>s+(i.units*i.cost),0);
+  const atRisk=stData.filter(i=>i.daysLeft!==null&&i.daysLeft<settings.stockDanger+settings.stockWarn).length;
+
+  document.getElementById('st-skus').textContent=total||'—';
+  document.getElementById('st-avgdays').textContent=total?Math.round(avgDays)+'d':'—';
+  document.getElementById('st-val').textContent=total?fmt(totalVal):'—';
+  document.getElementById('st-risk').textContent=total?atRisk:'—';
+
+  renderSTTable(stData);
+}
+
+function renderSTTable(data){
+  const sorted=[...data];
+  const sortMode=document.getElementById('stSort').value;
+  if(sortMode==='days')sorted.sort((a,b)=>(a.daysLeft||9999)-(b.daysLeft||9999));
+  else if(sortMode==='risk')sorted.sort((a,b)=>(a.daysLeft||9999)-(b.daysLeft||9999));
+  else sorted.sort((a,b)=>(b.units*b.cost)-(a.units*a.cost));
+
+  if(!sorted.length){
+    document.getElementById('stBody').innerHTML='<tr><td class="st-td" colspan="7" style="text-align:center;color:var(--muted);font-family:var(--mono)">Upload STK inventory + sales CSV to see forecasts</td></tr>';
+    return;
+  }
+  const maxVel=Math.max(...sorted.map(i=>i.velocity),0.1);
+  document.getElementById('stBody').innerHTML=sorted.map(item=>{
+    const dl=item.daysLeft;
+    const dc=dl===null?'days-b':dl<settings.stockDanger?'days-r':dl<settings.stockWarn?'days-a':'days-g';
+    const sellBy=item.sellByDate?item.sellByDate.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'}):'—';
+    const action=dl===null?'—':dl<settings.stockDanger?'🔴 Reorder now':dl<settings.stockWarn?'🟡 Plan reorder':'✅ OK';
+    const velPct=(item.velocity/maxVel)*100;
+    const confColor=item.confidence==='Historical'?'var(--green)':item.confidence==='Predicted'?'var(--amber)':'var(--muted2)';
+    return`<tr class="st-tr">
+      <td class="st-td"><div style="font-weight:600">${item.name}${item.isNew?'<span class="new-badge">NEW</span>':''}</div><div style="font:400 11px var(--mono);color:var(--muted2)">${item.sku||''}</div></td>
+      <td class="st-td" style="font:500 13px var(--mono)">${item.units.toLocaleString()}</td>
+      <td class="st-td"><div class="velocity-bar"><span style="font:500 12px var(--mono);min-width:40px">${item.velocity.toFixed(1)}/d</span><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${velPct}%;background:var(--blue)"></div></div></div></td>
+      <td class="st-td"><span class="days-badge ${dc}">${dl!==null?dl+'d':'—'}</span></td>
+      <td class="st-td" style="font:400 12px var(--mono)">${sellBy}</td>
+      <td class="st-td"><span style="font:500 11px var(--mono);color:${confColor}">${item.confidence}</span></td>
+      <td class="st-td" style="font-size:12px">${action}</td>
+    </tr>`;
+  }).join('');
+}
+
+function sortST(v){renderSTTable(stData)}
+
+function predictNew(){
+  const name=document.getElementById('npName').value||'New Product';
+  const cat=document.getElementById('npCat').value.toLowerCase();
+  const units=parseInt(document.getElementById('npUnits').value)||500;
+  const cost=parseFloat(document.getElementById('npCost').value)||0;
+  const catVelocity={'yak chews':2.5,'rabbit ears':3.5,'dog treats':4,'chews':2,'other':1.5};
+  const vel=catVelocity[cat]||catVelocity['other'];
+  // Use actual sales data velocity if available
+  const actualVelocities=Object.values(salesRows.reduce((m,s)=>{
+    const k=s.sku||s.name||'';
+    if(!m[k])m[k]=[];m[k].push(s.qty);return m;
+  },{}));
+  const avgActual=actualVelocities.length>0?(actualVelocities.flat().reduce((s,v)=>s+v,0)/actualVelocities.flat().length):null;
+
+  const usedVel=avgActual||vel;
+  const daysLeft=Math.round(units/usedVel);
+  const sellByDate=new Date(Date.now()+daysLeft*86400000);
+  const totalCost=units*cost;
+  const weeklyRevEnough=units*(cost*2.5)/( daysLeft/7);
+
+  document.getElementById('npResult').innerHTML=`
+    <div style="background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div><div style="font:500 10px var(--mono);color:var(--muted2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Est. Daily Sales</div><div style="font:700 16px var(--mono)">${usedVel.toFixed(1)} units/day</div><div style="font:400 11px var(--mono);color:var(--muted2)">${avgActual?'Based on your sales':'Category average'}</div></div>
+      <div><div style="font:500 10px var(--mono);color:var(--muted2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Days to Sell</div><div style="font:700 16px var(--mono);color:${daysLeft<settings.stockWarn?'var(--amber)':'var(--green)'}">${daysLeft} days</div><div style="font:400 11px var(--mono);color:var(--muted2)">By ${sellByDate.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</div></div>
+      <div><div style="font:500 10px var(--mono);color:var(--muted2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Capital Tied Up</div><div style="font:700 16px var(--mono);color:var(--amber)">${fmt(totalCost)}</div><div style="font:400 11px var(--mono);color:var(--muted2)">${daysLeft} days at risk</div></div>
+    </div>
+  `;
+}
+
+// ─── SPENDING ──────────────────────────────────────────────────
+function addBudget(){
+  const cat=document.getElementById('budgCat').value.trim();
+  const limit=parseFloat(document.getElementById('budgLimit').value)||0;
+  if(!cat||!limit)return;
+  budgets[cat]=limit;S('bk_budgets',budgets);
+  document.getElementById('budgCat').value='';document.getElementById('budgLimit').value='';
+  renderSpending();
+}
+function quickBudget(cat,limit){
+  budgets[cat]=limit;S('bk_budgets',budgets);renderSpending();
+}
+
+function renderSpending(){
+  // Auto-categorise bank transactions
+  const spendMap={};
+  bankTx.filter(t=>t.amount<0).forEach(t=>{
+    const c=catOf(t.desc).l;
+    if(!spendMap[c])spendMap[c]=0;
+    spendMap[c]+=Math.abs(t.amount);
+  });
+
+  const totalSpend=Object.values(spendMap).reduce((s,v)=>s+v,0);
+  let over=0,ok=0,unbudgeted=0;
+
+  const rows=Object.entries(spendMap).sort((a,b)=>b[1]-a[1]).map(([cat,spent])=>{
+    const limit=budgets[cat]||null;
+    const pct=limit?Math.min((spent/limit)*100,100):null;
+    const color=!limit?'#555':pct>100?'var(--red)':pct>75?'var(--amber)':'var(--green)';
+    if(limit){if(spent>limit)over++;else ok++}else unbudgeted++;
+    return`<div class="budget-row">
+      <div><div class="bname">${cat}</div><div class="bsub">${fmt(spent)} spent${limit?' of '+fmt(limit)+' budget':' — no budget set'}</div></div>
+      <div style="font:600 13px var(--mono);color:${color}">${fmt(spent)}</div>
+      <div>${limit?`<div class="prog-wrap" style="width:80px"><div class="prog-bg"><div class="prog-fill" style="width:${pct}%;background:${color}"></div></div><div style="font:400 10px var(--mono);color:var(--muted2);margin-top:3px">${Math.round(pct)}%</div></div>`:'<span style="font:400 11px var(--mono);color:var(--muted)">No limit</span>'}</div>
+      <button class="tdel" onclick="setBudgetPrompt('${cat}')">✎</button>
+    </div>`;
+  }).join('');
+
+  document.getElementById('sp-total').textContent=bankTx.length?fmt(totalSpend):'—';
+  document.getElementById('sp-over').textContent=bankTx.length?over:'—';
+  document.getElementById('sp-ok').textContent=bankTx.length?ok:'—';
+  document.getElementById('sp-un').textContent=bankTx.length?unbudgeted:'—';
+  document.getElementById('budgetRows').innerHTML=rows||'<div class="empty">Upload a bank statement to see spending</div>';
+}
+
+function setBudgetPrompt(cat){
+  const current=budgets[cat]||'';
+  const val=prompt(`Set monthly budget for "${cat}" (£):`,current);
+  if(val!==null&&!isNaN(+val)&&+val>0){budgets[cat]=+val;S('bk_budgets',budgets);renderSpending()}
+}
+
+// ─── LOANS ─────────────────────────────────────────────────────
+function addLoan(){
+  const n=document.getElementById('lName').value.trim();
+  const b=parseFloat(document.getElementById('lBal').value)||0;
+  const m=parseFloat(document.getElementById('lMonthly').value)||0;
+  if(!n)return;
+  loans.push({name:n,balance:b,monthly:m});S('bk_loans',loans);
+  ['lName','lBal','lMonthly'].forEach(id=>document.getElementById(id).value='');
+  renderControls();
+}
+function delLoan(i){loans.splice(i,1);S('bk_loans',loans);renderControls()}
+function renderLoans(){
+  document.getElementById('loanBadge').textContent=loans.length;
+  document.getElementById('loanRows').innerHTML=loans.map((l,i)=>`
+    <div class="trow" style="grid-template-columns:1fr auto auto auto;gap:10px">
+      <div><div class="tname">${l.name}</div><div class="tsub">${fmt(l.monthly)}/mo</div></div>
+      <div class="tval" style="color:var(--red)">${fmt(l.balance)}</div>
+      <button class="tdel" onclick="delLoan(${i})">✕</button>
+    </div>
+  `).join('')||'<div class="empty">No loans</div>';
+}
+
+// ─── REMITTANCE ────────────────────────────────────────────────
+function addRem(){
+  const s=document.getElementById('rSupp').value.trim();
+  const a=parseFloat(document.getElementById('rAmt').value)||0;
+  const d=document.getElementById('rDate').value;
+  if(!s)return;
+  remittances.push({supplier:s,amount:a,date:d,paid:false});S('bk_rem',remittances);
+  ['rSupp','rAmt','rDate'].forEach(id=>document.getElementById(id).value='');
+  renderControls();
+}
+function toggleRem(i){remittances[i].paid=!remittances[i].paid;S('bk_rem',remittances);renderControls()}
+function delRem(i){remittances.splice(i,1);S('bk_rem',remittances);renderControls()}
+function renderRem(){
+  document.getElementById('remBadge').textContent=remittances.length;
+  document.getElementById('remRows').innerHTML=remittances.map((r,i)=>`
+    <div class="trow" style="grid-template-columns:1fr auto auto auto;gap:10px">
+      <div><div class="tname">${r.supplier}</div><div class="tsub">${r.date?new Date(r.date).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):''}</div></div>
+      <div class="tval">${fmt(r.amount)}</div>
+      <button onclick="toggleRem(${i})" style="padding:2px 8px;border-radius:3px;font:600 11px var(--mono);border:1px solid;cursor:pointer;background:${r.paid?'var(--green-bg)':'var(--amber-bg)'};color:${r.paid?'var(--green)':'var(--amber)'};border-color:${r.paid?'rgba(34,197,94,.3)':'rgba(245,158,11,.3)'}">${r.paid?'Paid':'Due'}</button>
+      <button class="tdel" onclick="delRem(${i})">✕</button>
+    </div>
+  `).join('')||'<div class="empty">No payments</div>';
+}
+
+// ─── INIT ───────────────────────────────────────────────────────
+loadSettings();renderLoans();renderRem();renderSpending();
+</script>
+</body>
+</html>
